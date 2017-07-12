@@ -59,8 +59,3 @@ def discriminator(x, is_training, scope_name, reuse):
 
     return output
 
-
-
-
-
-
