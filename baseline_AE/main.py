@@ -23,7 +23,7 @@ def get_output_model_path():
   return path
 
 def parse_arguments():
-  tf.flags.DEFINE_integer('batch_size', 30, 'batch size, default: 16')
+  tf.flags.DEFINE_integer('batch_size', 128, 'batch size, default: 16')
   tf.flags.DEFINE_integer('target_size', 256, 'Image size, default: 256')
   tf.flags.DEFINE_integer(
       'num_block', 4, 'the number of residual block, default: 4')

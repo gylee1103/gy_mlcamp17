@@ -18,29 +18,29 @@ def generator(x, is_training, num_block, scope_name, reuse, is_gray=True):
   else:
     image_channel = 3
   with tf.variable_scope(scope_name, reuse=reuse) as vscope:
-    x = tf.layers.conv2d(x, 16, kernel_size=3, strides=1, padding='SAME',
+    x = tf.layers.conv2d(x, 10, kernel_size=3, strides=1, padding='SAME',
         activation=tf.nn.relu) # H, W
     x = tf.layers.batch_normalization(x, training=is_training)
-    x = tf.layers.conv2d(x, 32, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 10, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/2, W/2
     x = tf.layers.batch_normalization(x, training=is_training)
-    x = tf.layers.conv2d(x, 32, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 10, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/4, W/4
     x = tf.layers.batch_normalization(x, training=is_training)
-    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 10, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/8, W/8
     x = tf.layers.batch_normalization(x, training=is_training)
 
     #for ridx in range(num_block):
     #  x = residual_block(x, is_training, kernel_size=3)
-    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
+    x = tf.layers.conv2d_transpose(x, 10, kernel_size=3, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H/4, W/4
     x = tf.layers.batch_normalization(x, training=is_training)
 
-    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
+    x = tf.layers.conv2d_transpose(x, 10, kernel_size=3, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H/2, W/2
     x = tf.layers.batch_normalization(x, training=is_training)
-    x = tf.layers.conv2d_transpose(x, 32, kernel_size=3, strides=2, 
+    x = tf.layers.conv2d_transpose(x, 10, kernel_size=3, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H, W
     output = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
         padding='SAME', activation=None) # H, W
