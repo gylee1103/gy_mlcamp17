@@ -40,8 +40,11 @@ def generator(x, is_training, num_block, scope_name, reuse, is_gray=True):
         padding='SAME', activation=tf.nn.relu) # H, W
 
     x = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
-        padding='SAME', activation=None) # H, W
+        padding='SAME', activation=tf.nn.tanh) # H, W
+
     output = x + input
+    # current range: -2 ~ +2, normalize to -1 ~ +1
+    output = output/2.0
 
     return output
 
