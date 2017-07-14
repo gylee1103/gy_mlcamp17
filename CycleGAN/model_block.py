@@ -17,6 +17,8 @@ def generator(x, is_training, num_block, scope_name, reuse, is_gray=True):
     image_channel = 1
   else:
     image_channel = 3
+  input = x
+
   with tf.variable_scope(scope_name, reuse=reuse) as vscope:
     x = tf.layers.conv2d(x, 32, kernel_size=3, strides=1, padding='SAME',
         activation=tf.nn.relu) # H, W
@@ -36,8 +38,10 @@ def generator(x, is_training, num_block, scope_name, reuse, is_gray=True):
     x = tf.layers.batch_normalization(x, training=is_training)
     x = tf.layers.conv2d_transpose(x, 32, kernel_size=3, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H, W
-    output = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
-        padding='SAME', activation=tf.nn.tanh) # H, W
+
+    x = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
+        padding='SAME', activation=None) # H, W
+    output = x + input
 
     return output
 
@@ -54,8 +58,8 @@ def discriminator(x, is_training, scope_name, reuse):
     x = tf.layers.batch_normalization(x, training=is_training)
     x = tf.layers.conv2d(x, 256, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/16, W/16
-    x = tf.layers.dense(x, 512, activation=tf.nn.relu)
-    output = tf.layers.dense(x, 1, activation=tf.nn.sigmoid)
+    output = tf.layers.conv2d(x, 1, kernel_size=1, strides=2, padding='SAME',
+        activation=tf.nn.sigmoid) # H/16, W/16
 
     return output
 

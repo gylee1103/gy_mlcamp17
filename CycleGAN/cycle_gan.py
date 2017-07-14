@@ -39,8 +39,8 @@ def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_ra
     loss_GAN_F = tf.reduce_mean(tf.squared_difference(fake_DX, tf.ones_like(fake_DX)))
     loss_GAN_G = tf.reduce_mean(tf.squared_difference(fake_DY, tf.ones_like(fake_DY)))
 
-    loss_F = loss_GAN_F + cycle_loss
-    loss_G = loss_GAN_G + cycle_loss
+    loss_F = loss_GAN_F + cycle_lambda * cycle_loss
+    loss_G = loss_GAN_G + cycle_lambda * cycle_loss
 
     losses = {'loss_G': loss_G, 'loss_F': loss_F, 'loss_DX': loss_DX,
         'loss_DY': loss_DY, 'cycle_loss': cycle_loss}

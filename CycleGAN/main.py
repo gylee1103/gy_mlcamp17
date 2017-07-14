@@ -13,12 +13,12 @@ import cycle_gan
 time_now = datetime.datetime.now()
 
 def get_summary_path():
-  path = "summary_%02d_%02d_%02d_%02d" % (time_now.month, time_now.day,
+  path = "checkpoints/output_%02d_%02d_%02d_%02d" % (time_now.month, time_now.day,
       time_now.hour, time_now.minute)
   return path
 
 def get_output_model_path():
-  path = "output_%02d_%02d_%02d_%02d" % (time_now.month, time_now.day,
+  path = "checkpoints/output_%02d_%02d_%02d_%02d" % (time_now.month, time_now.day,
       time_now.hour, time_now.minute)
   return path
 
@@ -28,7 +28,7 @@ def parse_arguments():
   tf.flags.DEFINE_integer(
       'num_block', 4, 'the number of residual block, default: 4')
   tf.flags.DEFINE_integer(
-      'log_step', 1000, 'How often write the summary, default: 100')
+      'log_step', 100, 'How often write the summary, default: 100')
   tf.flags.DEFINE_string('X', 'sketch_list.txt',
       'text file that contains paths of files for Dataset X. default: sketch_list.txt')
   tf.flags.DEFINE_string('Y', 'pen_list.txt',
