@@ -192,7 +192,7 @@ def train():
             summary_writer.add_summary(result["summary"], step)
             summary_writer.flush()
 
-          if step % (FLAGS.log_step*10) == 0:
+          if step % (FLAGS.log_step*1) == 0:
             save_path = model_saver.save(sess, 
                 os.path.join(FLAGS.output_model_path, "model.ckpt"),
                 global_step= step)
