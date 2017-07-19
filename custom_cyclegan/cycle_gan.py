@@ -9,11 +9,11 @@ def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_ra
 
   num_block = 4
 
-  Y_from_X = generator(input_X, is_training, num_block, "generatorG", reuse=False, gen_sketch=False)
-  X_from_Y = generator(input_Y, is_training, num_block, "generatorF", reuse=False)
+  Y_from_X = generator_local(input_X, is_training, num_block, "generatorG", reuse=False, gen_sketch=False)
+  X_from_Y = generator_local(input_Y, is_training, num_block, "generatorF", reuse=False)
 
-  X_cycled = generator(Y_from_X, is_training, num_block, "generatorF", reuse=True)
-  Y_cycled = generator(X_from_Y, is_training, num_block, "generatorG", reuse=True, gen_sketch=False)
+  X_cycled = generator_local(Y_from_X, is_training, num_block, "generatorF", reuse=True)
+  Y_cycled = generator_local(X_from_Y, is_training, num_block, "generatorG", reuse=True, gen_sketch=False)
 
   predictions = {'Y_from_X': Y_from_X, 'X_from_Y': X_from_Y,
       'X_cycled': X_cycled, 'Y_cycled': Y_cycled}
@@ -35,7 +35,7 @@ def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_ra
     loss_fake_DY = tf.reduce_mean(tf.square(fake_DY0))# + tf.reduce_mean(tf.square(fake_DY1)) 
     loss_DY = (loss_real_DY + loss_fake_DY) / 2
 
-    cycle_loss_X = tf.reduce_mean(tf.abs(X_cycled - input_X)) // deactivate
+    cycle_loss_X = tf.reduce_mean(tf.abs(X_cycled - input_X))
     cycle_loss_Y = tf.reduce_mean(tf.abs(Y_cycled - input_Y))
     cycle_loss = cycle_loss_X + cycle_loss_Y
 

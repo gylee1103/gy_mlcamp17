@@ -12,7 +12,7 @@ def build_model(input_X, input_Y, input_Y_noise, is_training=True, learning_rate
   Y_from_X = generator(input_X, is_training, num_block, "generatorG", reuse=False)
   Y_from_Y = generator(input_Y_noise, is_training, num_block, "generatorG", reuse=True)
 
-  predictions = {'Y_from_X': Y_from_X}
+  predictions = {'Y_from_X': Y_from_X, 'Y_from_Y': Y_from_Y}
 
   if is_training:
 
@@ -25,7 +25,7 @@ def build_model(input_X, input_Y, input_Y_noise, is_training=True, learning_rate
 
     loss_recon = tf.reduce_mean(tf.squared_difference(input_Y, Y_from_Y))
     loss_G_gan = tf.reduce_mean(tf.squared_difference(fake_DY, tf.ones_like(fake_DY)))
-    loss_G = loss_G_gan + 5 * loss_recon
+    loss_G = loss_G_gan + 10 * loss_recon
 
     losses = {'loss_G': loss_G, 'loss_D': loss_D}
 

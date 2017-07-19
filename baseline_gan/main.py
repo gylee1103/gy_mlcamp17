@@ -83,7 +83,7 @@ def test():
 
     for step in range(num_test):
       fetch_dict = {
-          "X_after_AE": predictions["Y_from_X"],
+          "output": predictions["Y_from_X"],
       }
 
       img, original_size, resized_size = data_handler_X.next()
@@ -95,7 +95,7 @@ def test():
           feed_dict={input_X: img})
 
       # Crop and 
-      pen_img = result["X_after_AE"]
+      pen_img = result["output"]
       height, width = resized_size
       pen_img = pen_img.reshape([max_size, max_size])
       pen_img = pen_img[0:height, 0:width]
@@ -118,7 +118,6 @@ def add_noise(input_tensor):
   output = tf.transpose(output, perm=[3, 1, 2, 0])
   output = tf.clip_by_value(output, -1, 1)
   return output
-
 
 def train():
 
@@ -148,13 +147,15 @@ def train():
       summary_op = tf.summary.merge([
         tf.summary.image("X/input_X", input_X),
         tf.summary.image("X/Y_from_X", predictions['Y_from_X']),
+        tf.summary.image("Y/noisy_input_Y", input_Y_noise),
         tf.summary.image("Y/input_Y", input_Y),
+        tf.summary.image("Y/Y_from_Y", predictions['Y_from_Y']),
         tf.summary.scalar("loss/loss_D", losses['loss_D']),
         tf.summary.scalar("loss/loss_G", losses['loss_G']),
         ])
 
       summary_writer = tf.summary.FileWriter(FLAGS.summary_path)
-      model_saver = tf.train.Saver()
+      model_saver = tf.train.Saver(max_to_keep=1000)
 
     with tf.Session(graph=graph) as sess:
       if FLAGS.saved_model_path is not None:
@@ -183,9 +184,12 @@ def train():
           if step % FLAGS.log_step == 0:
             summary_writer.add_summary(result["summary"], step)
             summary_writer.flush()
-            save_path = model_saver.save(sess, 
+            
+            if step % (FLAGS.log_step * 10) == 0:
+              save_path = model_saver.save(sess, 
                 os.path.join(FLAGS.output_model_path, "model.ckpt"),
                 global_step= step)
+
 
           print("Iter %d, loss_D %f, loss_G %f" % (step, result["loss_D"],
             result['loss_G']))

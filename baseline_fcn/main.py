@@ -82,7 +82,7 @@ def test():
     [ train_op, losses, predictions ] = autoencoder.build_model(input_X, 
         input_Y, input_Y, is_training=False)
 
-    model_saver = tf.train.Saver()
+    model_saver = tf.train.Saver(max_to_keep=100)
 
   with tf.Session(graph=graph) as sess:
     if FLAGS.saved_model_path is not None:

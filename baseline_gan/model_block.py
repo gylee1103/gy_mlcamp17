@@ -23,11 +23,13 @@ def generator(x, is_training, num_block, scope_name, reuse, is_gray=True):
     x = tf.layers.conv2d(x, 64, kernel_size=3, strides=1, padding='SAME',
         activation=tf.nn.relu) # H, W
     x = tf.layers.batch_normalization(x, training=is_training)
+
     x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/2, W/2
     x = tf.layers.batch_normalization(x, training=is_training)
     x = tf.layers.conv2d(x, 128, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/4, W/4
+
     x = tf.layers.batch_normalization(x, training=is_training)
 
     for ridx in range(num_block):

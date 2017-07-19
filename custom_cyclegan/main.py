@@ -9,6 +9,7 @@ import datetime
 
 from sketch_data_handler import *
 from pen_data_handler import *
+from bezier_data_handler import *
 from test_data_handler import *
 import cycle_gan
 
@@ -118,11 +119,11 @@ def train():
 
     data_handler_X = SketchDataHandler(
         FLAGS.X, FLAGS.batch_size, FLAGS.target_size)
-    data_handler_Y = PenDataHandler(
-        FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
+    #data_handler_Y = PenDataHandler(
+    #    FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
 
-    #data_handler_Y = PenDataHandler( # FLAGS.X
-    #    FLAGS.batch_size, FLAGS.target_size)
+    data_handler_Y = BezierDataHandler( # FLAGS.X
+        FLAGS.batch_size, FLAGS.target_size)
 
     input_X = tf.placeholder_with_default(
         tf.zeros(data_handler_X.get_batch_shape()),

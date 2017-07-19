@@ -9,10 +9,11 @@ import scipy.misc
 from PIL import Image
 from data_handler import DataHandler
 
-class PenDataHandler(DataHandler):
+class BezierDataHandler(DataHandler):
     def __init__(self, batch_size, target_size): # Not use datafiles
-      super(PenDataHandler, self).__init__(batch_size, target_size)
-      self.queue = Queue(40)
+      super(BezierDataHandler, self).__init__(batch_size, target_size)
+      self.queue = Queue(50)
+      self.msg_queue = Queue(4)
       self.procs = []
       self.start_threads()
 
@@ -61,8 +62,8 @@ class PenDataHandler(DataHandler):
       output = self.queue.get()
       return output
 
-    def _enqueue_op(self, queue):
-      while True:
+    def _enqueue_op(self, queue, msg_queue):
+      while msg_queue.qsize() == 0:
         sz = self.target_size
         output = np.zeros([self.batch_size, sz, sz, 1])
         for i in range(self.batch_size):
@@ -71,14 +72,24 @@ class PenDataHandler(DataHandler):
 
     def start_threads(self):
       print("start threads called")
-      proc = Process(target=self._enqueue_op, args=((self.queue),))
-      self.procs.append(proc)
-      proc.start()
+      for i in range(10):
+        proc = Process(target=self._enqueue_op, args=(self.queue, self.msg_queue))
+        self.procs.append(proc)
+        proc.daemon = True
+        proc.start()
+
       print("enqueue thread started!")
 
 
     def get_batch_shape(self):
       return (self.batch_size, self.target_size, self.target_size, 1)
 
+    def kill(self):
+      self.msg_queue.put("illkillyou")
+      for proc in self.procs:
+        proc.terminate()
+        proc.join()
+      print("bezier data killed")
+ 
 if __name__ == '__main__':
   pass

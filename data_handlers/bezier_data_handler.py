@@ -9,9 +9,9 @@ import scipy.misc
 from PIL import Image
 from data_handler import DataHandler
 
-class PenDataHandler(DataHandler):
+class BezierDataHandler(DataHandler):
     def __init__(self, batch_size, target_size): # Not use datafiles
-      super(PenDataHandler, self).__init__(batch_size, target_size)
+      super(BezierDataHandler, self).__init__(batch_size, target_size)
       self.queue = Queue(40)
       self.msg_queue = Queue(4)
       self.procs = []

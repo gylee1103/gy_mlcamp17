@@ -72,7 +72,7 @@ class SketchDataHandler(DataHandler):
 
     def start_threads(self):
       print("start threads called")
-      for i in range(1):
+      for i in range(10):
         proc = Process(target=self._enqueue_op, args=(self.queue, self.msg_queue))
         self.procs.append(proc)
         proc.daemon = True

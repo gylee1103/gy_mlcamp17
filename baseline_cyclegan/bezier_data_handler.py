@@ -22,6 +22,7 @@ class BezierDataHandler(DataHandler):
         return n1 + diff*perc
 
     def drawLine(self, points, canvas):
+        h, w, _ = canvas.shape
         x1, y1, x2, y2, x3, y3 = points
         for i in range(0, 1000):
             perc = i / 1000.0
@@ -33,7 +34,11 @@ class BezierDataHandler(DataHandler):
             x = int(self.getPt(xa, xb, perc))
             y = int(self.getPt(ya, yb, perc))
 
-            canvas[x, y] = 1
+
+            for y in range(max(0, y-1), min(w, y+1)):
+              for x in range(max(0, x-1), min(w, x+1)):
+                canvas[y, x] = 1
+            
 
 
     def _draw_canvas(self):
@@ -56,7 +61,6 @@ class BezierDataHandler(DataHandler):
       # invert color and zero centering
       cropped_canvas = 1.0 - cropped_canvas
       cropped_canvas = cropped_canvas*2.0 - 1.0
-      print cropped_canvas
       return cropped_canvas
 
     def next(self):
@@ -73,9 +77,11 @@ class BezierDataHandler(DataHandler):
 
     def start_threads(self):
       print("start threads called")
-      proc = Process(target=self._enqueue_op, args=(self.queue, self.msg_queue))
-      self.procs.append(proc)
-      proc.start()
+      for i in range(10):
+        proc = Process(target=self._enqueue_op, args=(self.queue, self.msg_queue))
+        self.procs.append(proc)
+        proc.start()
+
       print("enqueue thread started!")
 
 

@@ -88,9 +88,10 @@ class PenDataHandler(DataHandler):
     def kill(self):
       self.msg_queue.put("illkillyou")
       for proc in self.procs:
+        proc.terminate()
         proc.join()
+      print("pen data killed")
       
 
 if __name__ == '__main__':
-  test_handler = SketchDataHandler('pen_list.txt', 128, 256)
-  mybatch = test_handler.next()
+  pass

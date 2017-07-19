@@ -10,6 +10,7 @@ import datetime
 from sketch_data_handler import *
 from pen_data_handler import *
 from test_data_handler import *
+from bezier_data_handler import *
 import cycle_gan
 
 time_now = datetime.datetime.now()
@@ -43,6 +44,19 @@ def parse_arguments():
       'model path to restore and continue training. default: None')
   tf.flags.DEFINE_string('mode', 'train', 
       'execution mode(train or test), default: train')
+
+def add_noise(input_tensor):
+  # generate random filters
+  [bs, h, w, c] = input_tensor.get_shape().as_list()
+  input_tensor = tf.transpose(input_tensor, perm=[3, 1, 2, 0])
+  random_filter = tf.random_normal([3, 3, bs, 1], mean=1.0, stddev=1)
+  output = tf.nn.depthwise_conv2d(input_tensor, filter=random_filter,
+      strides=[1, 1, 1, 1], padding="SAME")
+
+  output = tf.transpose(output, perm=[3, 1, 2, 0])
+  output = tf.clip_by_value(output, -1, 1)
+  return output
+
 
 def test():
   FLAGS = tf.flags.FLAGS
@@ -114,9 +128,11 @@ def train():
   graph = tf.Graph()
   data_handler_X = SketchDataHandler(
       FLAGS.X, FLAGS.batch_size, FLAGS.target_size)
+  data_handler_Y = BezierDataHandler(
+      FLAGS.batch_size, FLAGS.target_size)
 
-  data_handler_Y = PenDataHandler(
-      FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
+  #data_handler_Y = PenDataHandler(
+  #    FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
   try:
     with graph.as_default():
       input_X = tf.placeholder_with_default(
