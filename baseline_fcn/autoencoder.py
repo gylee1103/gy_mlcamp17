@@ -2,14 +2,15 @@
 import tensorflow as tf
 from model_block import *
 
-def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_rate=0.0002):
+def build_model(input_X, input_Y, input_Y_noise, cycle_lambda=10, 
+    is_training=True, learning_rate=0.0002):
   batch_size, target_size, _, target_channel = input_X.get_shape().as_list()
 
   num_block = 4
 
 
   # AutoEncoded using Pen Data(Y)
-  Y_after_AE = generator(input_Y, is_training, num_block, "AE", reuse=False)
+  Y_after_AE = generator(input_Y_noise, is_training, num_block, "AE", reuse=False)
 
   # AutoEncoded using Sketch Data(X) - but not used for train
   X_after_AE = generator(input_X, is_training, num_block, "AE", reuse=True)

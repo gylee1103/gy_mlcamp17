@@ -5,6 +5,8 @@ from model_block import *
 def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_rate=0.0002):
   batch_size, target_size, _, target_channel = input_X.get_shape().as_list()
 
+  # X is  Sketch, Y is Pen
+
   num_block = 4
 
   Y_from_X = generator(input_X, is_training, num_block, "generatorG", reuse=False)
@@ -17,6 +19,7 @@ def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_ra
       'X_cycled': X_cycled, 'Y_cycled': Y_cycled}
 
   if is_training:
+
 
     real_DX = discriminator(input_X, is_training, "discriminatorDX", reuse=False)
     fake_DX = discriminator(X_from_Y, is_training, "discriminatorDX", reuse=True)
@@ -37,13 +40,14 @@ def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_ra
     cycle_loss = cycle_loss_X + cycle_loss_Y
 
     loss_GAN_F = tf.reduce_mean(tf.squared_difference(fake_DX, tf.ones_like(fake_DX)))
+
     loss_GAN_G = tf.reduce_mean(tf.squared_difference(fake_DY, tf.ones_like(fake_DY)))
 
     loss_F = loss_GAN_F + cycle_lambda * cycle_loss
     loss_G = loss_GAN_G + cycle_lambda * cycle_loss
 
     losses = {'loss_G': loss_G, 'loss_F': loss_F, 'loss_DX': loss_DX,
-        'loss_DY': loss_DY, 'cycle_loss': cycle_loss}
+        'loss_DY': loss_DY, 'cycle_loss': cycle_loss, 'loss_GAN_G': loss_GAN_G}
 
     t_vars = tf.trainable_variables()
 
@@ -55,13 +59,13 @@ def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_ra
 
     optimizer = tf.train.AdamOptimizer(learning_rate)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    G_optimizer = optimizer.minimize(loss_G, var_list=G_vars)
-    F_optimizer = optimizer.minimize(loss_F, var_list=F_vars)
-    DX_optimizer = optimizer.minimize(loss_DX, var_list=DX_vars)
-    DY_optimizer = optimizer.minimize(loss_DY, var_list=DY_vars)
+    with tf.control_dependencies(update_ops):
+      G_optimizer = optimizer.minimize(loss_G, var_list=G_vars)
+      F_optimizer = optimizer.minimize(loss_F, var_list=F_vars)
+      DX_optimizer = optimizer.minimize(loss_DX, var_list=DX_vars)
+      DY_optimizer = optimizer.minimize(loss_DY, var_list=DY_vars)
 
-    with tf.control_dependencies(update_ops + [G_optimizer, DY_optimizer,
-      F_optimizer, DX_optimizer]):
+    with tf.control_dependencies([G_optimizer, DY_optimizer, F_optimizer, DX_optimizer]):
       train_op = tf.no_op(name='train_op')
 
   else:

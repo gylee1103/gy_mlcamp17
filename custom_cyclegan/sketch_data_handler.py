@@ -75,7 +75,6 @@ class SketchDataHandler(DataHandler):
       for i in range(1):
         proc = Process(target=self._enqueue_op, args=(self.queue, self.msg_queue))
         self.procs.append(proc)
-        proc.daemon = True
         proc.start()
       print("enqueue thread started!")
 
@@ -86,9 +85,7 @@ class SketchDataHandler(DataHandler):
     def kill(self):
       self.msg_queue.put("illkillyou")
       for proc in self.procs:
-        proc.terminate()
         proc.join()
-      print('sketch data killed')
  
 if __name__ == '__main__':
   test_handler = SketchDataHandler('pen_list.txt', 128, 256)

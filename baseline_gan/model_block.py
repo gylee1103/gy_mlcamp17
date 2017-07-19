@@ -20,48 +20,44 @@ def generator(x, is_training, num_block, scope_name, reuse, is_gray=True):
   input = x
 
   with tf.variable_scope(scope_name, reuse=reuse) as vscope:
-    x = tf.layers.conv2d(x, 32, kernel_size=3, strides=1, padding='SAME',
+    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=1, padding='SAME',
         activation=tf.nn.relu) # H, W
     x = tf.layers.batch_normalization(x, training=is_training)
     x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/2, W/2
     x = tf.layers.batch_normalization(x, training=is_training)
-    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 128, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/4, W/4
     x = tf.layers.batch_normalization(x, training=is_training)
 
     for ridx in range(num_block):
       x = residual_block(x, is_training, kernel_size=3)
 
-    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
+    x = tf.layers.conv2d_transpose(x, 128, kernel_size=3, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H/2, W/2
     x = tf.layers.batch_normalization(x, training=is_training)
-    x = tf.layers.conv2d_transpose(x, 32, kernel_size=3, strides=2, 
+    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H, W
 
-    x = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
+    output = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
         padding='SAME', activation=tf.nn.tanh) # H, W
-
-    output = x + input
-    # current range: -2 ~ +2, normalize to -1 ~ +1
-    output = output/2.0
 
     return output
 
 def discriminator(x, is_training, scope_name, reuse):
   with tf.variable_scope(scope_name, reuse=reuse) as vscope:
-    x = tf.layers.conv2d(x, 32, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 32, kernel_size=8, strides=8, padding='SAME',
         activation=tf.nn.relu) # H/2, W/2
     x = tf.layers.batch_normalization(x, training=is_training)
-    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 64, kernel_size=4, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/4, W/4
     x = tf.layers.batch_normalization(x, training=is_training)
-    x = tf.layers.conv2d(x, 128, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/8, W/8
     x = tf.layers.batch_normalization(x, training=is_training)
-    x = tf.layers.conv2d(x, 256, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 32, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/16, W/16
-    output = tf.layers.conv2d(x, 1, kernel_size=1, strides=2, padding='SAME',
+    output = tf.layers.conv2d(x, 1, kernel_size=1, strides=1, padding='SAME',
         activation=tf.nn.sigmoid) # H/16, W/16
 
     return output

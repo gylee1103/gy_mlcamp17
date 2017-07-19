@@ -10,9 +10,9 @@ import scipy.ndimage
 from PIL import Image
 from data_handler import DataHandler
 
-class SketchDataHandler(DataHandler):
+class PenDataHandler(DataHandler):
     def __init__(self, paths_file, batch_size, target_size):
-      super(SketchDataHandler, self).__init__(batch_size, target_size)
+      super(PenDataHandler, self).__init__(batch_size, target_size)
       self._index = 0
       self._image_paths = self._get_image_paths(paths_file)
       if (len(self._image_paths) < batch_size * 100):
@@ -49,8 +49,10 @@ class SketchDataHandler(DataHandler):
       cropped_img = image[topleft_y:topleft_y+crop_height,
           topleft_x:topleft_x+crop_width]
       output = scipy.misc.imresize(cropped_img, [self.target_size, self.target_size])
-      output = (output - 128.0) / 128.0
-      return output
+      # threshold
+      output_thres = np.where(output < 150, -1.0, 1.0)
+     
+      return output_thres
 
     def next(self):
       output = self.queue.get()
@@ -62,6 +64,7 @@ class SketchDataHandler(DataHandler):
         indexes = np.random.randint(0, self._total_num, self.batch_size)
         sz = self.target_size
         output = np.zeros([self.batch_size, sz, sz, 1])
+
         for i in range(len(indexes)):
           index = indexes[i]
           output[i] = self._random_preprocessing(scipy.misc.imread(
@@ -75,7 +78,6 @@ class SketchDataHandler(DataHandler):
       for i in range(1):
         proc = Process(target=self._enqueue_op, args=(self.queue, self.msg_queue))
         self.procs.append(proc)
-        proc.daemon = True
         proc.start()
       print("enqueue thread started!")
 
@@ -88,8 +90,8 @@ class SketchDataHandler(DataHandler):
       for proc in self.procs:
         proc.terminate()
         proc.join()
-      print('sketch data killed')
- 
+      print("pen data killed")
+      
+
 if __name__ == '__main__':
-  test_handler = SketchDataHandler('pen_list.txt', 128, 256)
-  mybatch = test_handler.next()
+  pass
