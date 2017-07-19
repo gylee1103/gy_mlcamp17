@@ -9,9 +9,9 @@ import scipy.misc
 from PIL import Image
 from data_handler import DataHandler
 
-class PenDataHandler(DataHandler):
+class BezierDataHandler(DataHandler):
     def __init__(self, batch_size, target_size): # Not use datafiles
-      super(PenDataHandler, self).__init__(batch_size, target_size)
+      super(BezierDataHandler, self).__init__(batch_size, target_size)
       self.queue = Queue(40)
       self.msg_queue = Queue(4)
       self.procs = []
@@ -54,8 +54,9 @@ class PenDataHandler(DataHandler):
       cropped_canvas = canvas[crop_point:crop_point+self.target_size, 
           crop_point:crop_point+self.target_size]
       # invert color and zero centering
-      cropped_canvas = 1 - cropped_canvas
-      cropped_canvas = cropped_canvas*2 - 1
+      cropped_canvas = 1.0 - cropped_canvas
+      cropped_canvas = cropped_canvas*2.0 - 1.0
+      print cropped_canvas
       return cropped_canvas
 
     def next(self):
@@ -89,4 +90,6 @@ class PenDataHandler(DataHandler):
       print("bezier data killed")
  
 if __name__ == '__main__':
-  pass
+  test =  BezierDataHandler(10, 256)
+  canvases = test.next()
+  print canvases[0]

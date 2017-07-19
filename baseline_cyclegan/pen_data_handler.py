@@ -68,7 +68,7 @@ class PenDataHandler(DataHandler):
         for i in range(len(indexes)):
           index = indexes[i]
           output[i] = self._random_preprocessing(scipy.misc.imread(
-            self._image_paths[index], mode='L').astype(np.float),
+            self._image_paths[index], mode='L').astype(np.float32),
             self.target_size).reshape([sz, sz, 1])
         queue.put(output)
 

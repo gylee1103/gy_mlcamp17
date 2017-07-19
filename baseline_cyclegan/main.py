@@ -50,25 +50,25 @@ def test():
 
   graph = tf.Graph()
   max_size = 1024
-  input_X = tf.placeholder_with_default(
-      tf.zeros([1, max_size, max_size, 1]),
-      [1, max_size, max_size, 1], name='input_X')
-
-  input_Y = tf.placeholder_with_default(
-      tf.zeros([1, max_size, max_size, 1]),
-      [1, max_size, max_size, 1], name='input_Y')
-
 
   with graph.as_default():
     data_handler_X = TestDataHandler(FLAGS.X, max_size=max_size)
     num_test = data_handler_X.num_test()
+
+    input_X = tf.placeholder_with_default(
+        tf.zeros([1, max_size, max_size, 1]),
+        [1, max_size, max_size, 1], name='input_X')
+
+    input_Y = tf.placeholder_with_default(
+        tf.zeros([1, max_size, max_size, 1]),
+        [1, max_size, max_size, 1], name='input_Y')
+
     # --------------------------------------------------------------------
     # Model here
     # --------------------------------------------------------------------
 
-    [ train_op, losses, predictions ] = cycle_gan.build_model(
-        input_X, input_Y, is_training=False)
-
+    [ train_op, losses, predictions ] = cycle_gan.build_model(input_X, 
+        input_Y, input_Y, is_training=False)
 
     model_saver = tf.train.Saver()
 
@@ -105,6 +105,7 @@ def test():
       scipy.misc.imsave('%06d.png' % step, pen_img) 
 
       print("count %d" % (step))
+
 
 def train():
 
