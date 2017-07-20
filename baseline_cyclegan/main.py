@@ -26,7 +26,7 @@ def get_output_model_path():
   return path
 
 def parse_arguments():
-  tf.flags.DEFINE_integer('batch_size', 16, 'batch size, default: 16')
+  tf.flags.DEFINE_integer('batch_size', 12, 'batch size, default: 12')
   tf.flags.DEFINE_integer('target_size', 256, 'Image size, default: 256')
   tf.flags.DEFINE_integer(
       'num_block', 4, 'the number of residual block, default: 4')
@@ -63,7 +63,7 @@ def test():
   is_training = False
 
   graph = tf.Graph()
-  max_size = 1024
+  max_size = 2048
 
   with graph.as_default():
     data_handler_X = TestDataHandler(FLAGS.X, max_size=max_size)
@@ -101,9 +101,6 @@ def test():
       }
 
       img, original_size, resized_size = data_handler_X.next()
-      ori_img = img * 128.0 + 128.0
-      ori_img = ori_img.reshape([max_size, max_size])
-      scipy.misc.imsave('original_%06d.png' % step, ori_img) 
 
       result = sess.run(fetch_dict,
           feed_dict={input_X: img})
@@ -166,8 +163,10 @@ def train():
 
     with tf.Session(graph=graph) as sess:
       if FLAGS.saved_model_path is not None:
+          checkpoint = tf.train.get_checkpoint_state(FLAGS.saved_model_path)
           model_saver.restore(sess, tf.train.latest_checkpoint(FLAGS.saved_model_path))
-          step = int(meta_graph_path.split("-")[2].split(".")[0])
+          meta_graph_path = checkpoint.model_checkpoint_path + ".meta"
+          step = int(meta_graph_path.split("-")[1].split(".")[0])
       else:
         sess.run(tf.global_variables_initializer())
         step = 0

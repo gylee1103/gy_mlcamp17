@@ -31,10 +31,10 @@ class TestDataHandler(DataHandler):
             self._image_paths[self._index], mode='L').astype(np.float32)
         original_size = img.shape
         bigger_size = max(original_size[0], original_size[1])
-        if (bigger_size > self.target_size): # resize
-          mult = self.target_size / float(bigger_size)
-        else:
-          mult = 1
+
+        mult = self.target_size / float(bigger_size)
+
+
 
         resized_size = (int(original_size[0] * mult), int(original_size[1]*mult))
         img = scipy.misc.imresize(img, resized_size)

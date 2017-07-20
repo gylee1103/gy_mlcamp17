@@ -50,7 +50,7 @@ class PenDataHandler(DataHandler):
           topleft_x:topleft_x+crop_width]
       output = scipy.misc.imresize(cropped_img, [self.target_size, self.target_size])
       # threshold
-      output_thres = np.where(output < 200, -1.0, 1.0)
+      output_thres = np.where(output < 150, -1.0, 1.0)
      
       return output_thres
 
@@ -68,14 +68,14 @@ class PenDataHandler(DataHandler):
         for i in range(len(indexes)):
           index = indexes[i]
           output[i] = self._random_preprocessing(scipy.misc.imread(
-            self._image_paths[index], mode='L').astype(np.float),
+            self._image_paths[index], mode='L').astype(np.float32),
             self.target_size).reshape([sz, sz, 1])
         queue.put(output)
 
 
     def start_threads(self):
       print("start threads called")
-      for i in range(1):
+      for i in range(10):
         proc = Process(target=self._enqueue_op, args=(self.queue, self.msg_queue))
         self.procs.append(proc)
         proc.start()

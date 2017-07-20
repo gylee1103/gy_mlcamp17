@@ -20,7 +20,7 @@ class SketchDataHandler(DataHandler):
       self._shuffle_image_paths()
       self._total_num = len(self._image_paths)
 
-      self.queue = Queue(50)
+      self.queue = Queue(40)
       self.msg_queue = Queue(4)
       self.procs = []
       self.start_threads()
@@ -72,7 +72,7 @@ class SketchDataHandler(DataHandler):
 
     def start_threads(self):
       print("start threads called")
-      for i in range(10):
+      for i in range(2):
         proc = Process(target=self._enqueue_op, args=(self.queue, self.msg_queue))
         self.procs.append(proc)
         proc.daemon = True

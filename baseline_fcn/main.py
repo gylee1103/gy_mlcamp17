@@ -44,17 +44,7 @@ def parse_arguments():
   tf.flags.DEFINE_string('mode', 'train', 
       'execution mode(train or test), default: train')
 
-def add_noise(input_tensor):
-  # generate random filters
-  [bs, h, w, c] = input_tensor.get_shape().as_list()
-  input_tensor = tf.transpose(input_tensor, perm=[3, 1, 2, 0])
-  random_filter = tf.random_normal([3, 3, bs, 1], mean=1.0, stddev=1)
-  output = tf.nn.depthwise_conv2d(input_tensor, filter=random_filter,
-      strides=[1, 1, 1, 1], padding="SAME")
 
-  output = tf.transpose(output, perm=[3, 1, 2, 0])
-  output = tf.clip_by_value(output, -1, 1)
-  return output
 
 def test():
   FLAGS = tf.flags.FLAGS

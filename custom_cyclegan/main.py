@@ -9,8 +9,8 @@ import datetime
 
 from sketch_data_handler import *
 from pen_data_handler import *
-from bezier_data_handler import *
 from test_data_handler import *
+from bezier_data_handler import *
 import cycle_gan
 
 time_now = datetime.datetime.now()
@@ -21,13 +21,12 @@ def get_summary_path():
   return path
 
 def get_output_model_path():
-
   path = "checkpoints/output_%02d_%02d_%02d_%02d" % (time_now.month, time_now.day,
       time_now.hour, time_now.minute)
   return path
 
 def parse_arguments():
-  tf.flags.DEFINE_integer('batch_size', 16, 'batch size, default: 16')
+  tf.flags.DEFINE_integer('batch_size', 8, 'batch size, default: 12')
   tf.flags.DEFINE_integer('target_size', 256, 'Image size, default: 256')
   tf.flags.DEFINE_integer(
       'num_block', 4, 'the number of residual block, default: 4')
@@ -45,6 +44,19 @@ def parse_arguments():
       'model path to restore and continue training. default: None')
   tf.flags.DEFINE_string('mode', 'train', 
       'execution mode(train or test), default: train')
+
+def add_noise(input_tensor):
+  # generate random filters
+  [bs, h, w, c] = input_tensor.get_shape().as_list()
+  input_tensor = tf.transpose(input_tensor, perm=[3, 1, 2, 0])
+  random_filter = tf.random_normal([3, 3, bs, 1], mean=1.0, stddev=1)
+  output = tf.nn.depthwise_conv2d(input_tensor, filter=random_filter,
+      strides=[1, 1, 1, 1], padding="SAME")
+
+  output = tf.transpose(output, perm=[3, 1, 2, 0])
+  output = tf.clip_by_value(output, -1, 1)
+  return output
+
 
 def test():
   FLAGS = tf.flags.FLAGS
@@ -69,15 +81,14 @@ def test():
     # Model here
     # --------------------------------------------------------------------
 
-    [ train_op, losses, predictions ] = cycle_gan.build_model(
-        input_X, input_Y, is_training=False)
-
+    [ train_op, losses, predictions ] = cycle_gan.build_model(input_X, 
+        input_Y, is_training=False)
 
     model_saver = tf.train.Saver()
 
   with tf.Session(graph=graph) as sess:
     if FLAGS.saved_model_path is not None:
-      model_saver.restore(sess, tf.train.latest_checkpoint(FLAGS.saved_model_path))
+      model_saver.restore(sess, FLAGS.saved_model_path)
       step = 0
     else:
       print("model path is required for test run")
@@ -86,19 +97,16 @@ def test():
 
     for step in range(num_test):
       fetch_dict = {
-          "X_after_AE": predictions["Y_from_X"],
+          "output": predictions["Y_from_X"],
       }
 
       img, original_size, resized_size = data_handler_X.next()
-      ori_img = img * 128.0 + 128.0
-      ori_img = ori_img.reshape([max_size, max_size])
-      scipy.misc.imsave('original_%06d.png' % step, ori_img) 
 
       result = sess.run(fetch_dict,
           feed_dict={input_X: img})
 
       # Crop and 
-      pen_img = result["X_after_AE"]
+      pen_img = result["output"]
       height, width = resized_size
       pen_img = pen_img.reshape([max_size, max_size])
       pen_img = pen_img[0:height, 0:width]
@@ -109,93 +117,98 @@ def test():
 
       print("count %d" % (step))
 
+
 def train():
 
   FLAGS = tf.flags.FLAGS
   is_training = True
   graph = tf.Graph()
+  data_handler_X = SketchDataHandler(
+      FLAGS.X, FLAGS.batch_size, FLAGS.target_size)
+  data_handler_Y = BezierDataHandler(
+      FLAGS.batch_size, FLAGS.target_size)
 
-  with graph.as_default():
+  #data_handler_Y = PenDataHandler(
+  #    FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
+  try:
+    with graph.as_default():
+      input_X = tf.placeholder_with_default(
+          tf.zeros(data_handler_X.get_batch_shape()),
+          data_handler_X.get_batch_shape(), name='input_X')
+      input_Y = tf.placeholder_with_default(
+          tf.zeros(data_handler_Y.get_batch_shape()),
+          data_handler_Y.get_batch_shape(), name='input_Y')
 
-    data_handler_X = SketchDataHandler(
-        FLAGS.X, FLAGS.batch_size, FLAGS.target_size)
-    #data_handler_Y = PenDataHandler(
-    #    FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
+      # --------------------------------------------------------------------
+      # Model here
+      # --------------------------------------------------------------------
+      [ train_op, losses, predictions ] = cycle_gan.build_model(input_X, input_Y)
 
-    data_handler_Y = BezierDataHandler( # FLAGS.X
-        FLAGS.batch_size, FLAGS.target_size)
+      summary_op = tf.summary.merge([
+        tf.summary.image("X/input_X", input_X),
+        tf.summary.image("X/Y_from_X", predictions['Y_from_X']),
+        tf.summary.image("X/X_cycled", predictions['X_cycled']),
+        tf.summary.image("X/X_from_X", predictions['X_from_X']),
+        tf.summary.image("Y/input_Y", input_Y),
+        tf.summary.image("Y/X_from_Y", predictions['X_from_Y']),
+        tf.summary.image("Y/Y_cycled", predictions['Y_cycled']),
+        tf.summary.image("Y/Y_from_Y", predictions['Y_from_Y']),
+        tf.summary.scalar("loss/loss_DY", losses['loss_DY']),
+        tf.summary.scalar("loss/loss_GAN_G", losses['loss_GAN_G']),
+        tf.summary.scalar("loss/loss_G", losses['loss_G']),
+        tf.summary.scalar("loss/loss_cycle", losses['cycle_loss']),
+        tf.summary.scalar("loss/guide_loss", losses['guide_loss']),
+        ])
 
-    input_X = tf.placeholder_with_default(
-        tf.zeros(data_handler_X.get_batch_shape()),
-        data_handler_X.get_batch_shape(), name='input_X')
-    input_Y = tf.placeholder_with_default(
-        tf.zeros(data_handler_Y.get_batch_shape()),
-        data_handler_Y.get_batch_shape(), name='input_Y')
+      summary_writer = tf.summary.FileWriter(FLAGS.summary_path)
+      model_saver = tf.train.Saver(max_to_keep=1000)
 
+    with tf.Session(graph=graph) as sess:
+      if FLAGS.saved_model_path is not None:
+          checkpoint = tf.train.get_checkpoint_state(FLAGS.saved_model_path)
+          model_saver.restore(sess, tf.train.latest_checkpoint(FLAGS.saved_model_path))
+          meta_graph_path = checkpoint.model_checkpoint_path + ".meta"
+          step = int(meta_graph_path.split("-")[1].split(".")[0])
+      else:
+        sess.run(tf.global_variables_initializer())
+        step = 0
 
-    # --------------------------------------------------------------------
-    # Model here
-    # --------------------------------------------------------------------
-    [ train_op, losses, predictions ] = cycle_gan.build_model(input_X, input_Y)
+      try:
+        while True:
+          fetch_dict = {
+              "train_op": train_op,
+              "loss_DY": losses['loss_DY'],
+              "loss_G": losses['loss_G'],
+          }
+          if step % FLAGS.log_step == 0:
+            fetch_dict.update({
+              "summary": summary_op,
+            })
 
-    summary_op = tf.summary.merge([
-      tf.summary.image("X/input_X", input_X),
-      tf.summary.image("X/Y_from_X", predictions['Y_from_X']),
-      tf.summary.image("X/X_cycled", predictions['X_cycled']),
-      tf.summary.image("Y/input_Y", input_Y),
-      tf.summary.image("Y/X_from_Y", predictions['X_from_Y']),
-      tf.summary.image("Y/Y_cycled", predictions['Y_cycled']),
-      tf.summary.scalar("loss/loss_DY", losses['loss_DY']),
-      tf.summary.scalar("loss/loss_GAN_G", losses['loss_GAN_G']),
-      tf.summary.scalar("loss/loss_G", losses['loss_G']),
-      tf.summary.scalar("loss/loss_cycle", losses['cycle_loss']),
-      ])
+          result = sess.run(fetch_dict,
+              feed_dict={input_X: data_handler_X.next(),
+                input_Y: data_handler_Y.next(),})
 
-    summary_writer = tf.summary.FileWriter(FLAGS.summary_path)
-    model_saver = tf.train.Saver(max_to_keep=1000)
+          if step % FLAGS.log_step == 0:
+            summary_writer.add_summary(result["summary"], step)
+            summary_writer.flush()
 
-  with tf.Session(graph=graph) as sess:
-    if FLAGS.saved_model_path is not None:
-      model_saver.restore(sess, tf.train.latest_checkpoint(FLAGS.saved_model_path))
-      step = int(meta_graph_path.split("-")[2].split(".")[0])
-    else:
-      sess.run(tf.global_variables_initializer())
-      step = 0
+          if step % (FLAGS.log_step*10) == 0:
+            save_path = model_saver.save(sess, 
+                os.path.join(FLAGS.output_model_path, "model.ckpt"),
+                global_step= step)
 
-    try:
-      while True:
-        fetch_dict = {
-            "train_op": train_op,
-            "loss_DY": losses['loss_DY'],
-            "loss_G": losses['loss_G'],
-        }
-        if step % FLAGS.log_step == 0:
-          fetch_dict.update({
-            "summary": summary_op,
-          })
-
-        result = sess.run(fetch_dict,
-            feed_dict={input_X: data_handler_X.next(),
-              input_Y: data_handler_Y.next(),})
-
-        if step % FLAGS.log_step == 0:
-          summary_writer.add_summary(result["summary"], step)
-          summary_writer.flush()
-
-        if step % (FLAGS.log_step*10) == 0:
-          save_path = model_saver.save(sess, 
-              os.path.join(FLAGS.output_model_path, "model.ckpt"),
-              global_step= step)
-
-        print("Iter %d, loss_DY %f, loss_G %f" % (step, result["loss_DY"],
-          result['loss_G']))
-        step += 1
-    finally:
-      save_path = model_saver.save(sess, 
-          os.path.join(FLAGS.output_model_path, "model.ckpt"),
-          global_step= step)
-      data_handler_X.kill()
-      data_handler_Y.kill()
+          print("Iter %d, loss_DY %f, loss_G %f" % (step, result["loss_DY"],
+            result['loss_G']))
+          step += 1
+      finally:
+        save_path = model_saver.save(sess, 
+            os.path.join(FLAGS.output_model_path, "model.ckpt"),
+            global_step= step)
+        
+  finally:
+    data_handler_X.kill()
+    data_handler_Y.kill()
 
 def main(args=None):
   FLAGS = tf.flags.FLAGS

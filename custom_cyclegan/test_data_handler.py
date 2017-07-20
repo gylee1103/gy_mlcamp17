@@ -12,6 +12,7 @@ class TestDataHandler(DataHandler):
 
       self._index = 0
       self._image_paths = self._get_image_paths(paths_file)
+      self._image_paths.sort()
 
       self._total_num = len(self._image_paths)
       
@@ -25,15 +26,15 @@ class TestDataHandler(DataHandler):
 
     def next(self):
         sz = self.target_size
-        output = np.ones([1, sz, sz, 1]).astype(np.float)
+        output = np.ones([1, sz, sz, 1]).astype(np.float32)
         img = scipy.misc.imread(
-            self._image_paths[self._index], mode='L').astype(np.float)
+            self._image_paths[self._index], mode='L').astype(np.float32)
         original_size = img.shape
         bigger_size = max(original_size[0], original_size[1])
-        if (bigger_size > self.target_size): # resize
-          mult = self.target_size / float(bigger_size)
-        else:
-          mult = 1
+
+        mult = self.target_size / float(bigger_size)
+
+
 
         resized_size = (int(original_size[0] * mult), int(original_size[1]*mult))
         img = scipy.misc.imresize(img, resized_size)
