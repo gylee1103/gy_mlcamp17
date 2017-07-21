@@ -23,7 +23,7 @@ def get_output_model_path():
 
 def get_dataset_path():
   if tf.flags.FLAGS.run_mlengine:
-    gs_dbpath = os.path.join(tf.flags.mlengine_path, "SketchDB")
+    gs_dbpath = os.path.join(tf.flags.FLAGS.mlengine_path, "SketchDB")
     os.system("mkdir dataset")
     os.system("gsutil -m cp -r %s $(pwd)/dataset" % gs_dbpath)
     return os.path.abspath("./dataset/SketchDB")
