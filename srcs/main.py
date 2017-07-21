@@ -199,10 +199,10 @@ def train():
         FLAGS.batch_size, FLAGS.target_size)
   elif FLAGS.data_type == 'real':
     data_handler_Y = PenDataHandler(
-        get_dataset_path, FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
+        get_dataset_path(), FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
   elif FLAGS.data_type == 'all':
     data_handler_Y = MixedDataHandler(
-        get_dataset_path, FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
+        get_dataset_path(), FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
   else:
     print("no match dataset for %s" % FLAGS.data_type)
     exit(-1)
