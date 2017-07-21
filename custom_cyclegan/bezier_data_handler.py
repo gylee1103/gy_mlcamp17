@@ -68,7 +68,7 @@ class BezierDataHandler(DataHandler):
 
       self.drawLine(points, canvas)
       
-      n_line = np.random.randint(10, 25)
+      n_line = np.random.randint(5, 10)
       for i in range(n_line):
           points = np.random.randint(0, canvas_size, 8)
           points[0] = x4

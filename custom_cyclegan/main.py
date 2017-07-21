@@ -15,11 +15,6 @@ import cycle_gan
 
 time_now = datetime.datetime.now()
 
-def get_summary_path():
-  path = "checkpoints/output_%02d_%02d_%02d_%02d" % (time_now.month, time_now.day,
-      time_now.hour, time_now.minute)
-  return path
-
 def get_output_model_path():
   path = "checkpoints/output_%02d_%02d_%02d_%02d" % (time_now.month, time_now.day,
       time_now.hour, time_now.minute)
@@ -38,8 +33,6 @@ def parse_arguments():
       'text file that contains paths of files for Dataset Y. default: pen_list.txt')
   tf.flags.DEFINE_string('output_model_path', get_output_model_path(),
       'output model path to save trained model. default: None(automatic)')
-  tf.flags.DEFINE_string('summary_path', get_summary_path(),
-      'summary path. default: None(automatic)')
   tf.flags.DEFINE_string('saved_model_path', None,
       'model path to restore and continue training. default: None')
   tf.flags.DEFINE_string('mode', 'train', 
@@ -147,6 +140,7 @@ def train():
       summary_op = tf.summary.merge([
         tf.summary.image("X/input_X", input_X),
         tf.summary.image("X/Y_from_X", predictions['Y_from_X']),
+        tf.summary.image("X/Y_from_X_sketch", predictions['Y_from_X_sketch']),
         tf.summary.image("X/X_cycled", predictions['X_cycled']),
         tf.summary.image("X/X_from_X", predictions['X_from_X']),
         tf.summary.image("Y/input_Y", input_Y),
@@ -160,7 +154,7 @@ def train():
         tf.summary.scalar("loss/guide_loss", losses['guide_loss']),
         ])
 
-      summary_writer = tf.summary.FileWriter(FLAGS.summary_path)
+      summary_writer = tf.summary.FileWriter(FLAGS.output_model_path)
       model_saver = tf.train.Saver(max_to_keep=1000)
 
     with tf.Session(graph=graph) as sess:
@@ -193,7 +187,7 @@ def train():
             summary_writer.add_summary(result["summary"], step)
             summary_writer.flush()
 
-          if step % (FLAGS.log_step*10) == 0:
+          if step % (FLAGS.log_step*5) == 0:
             save_path = model_saver.save(sess, 
                 os.path.join(FLAGS.output_model_path, "model.ckpt"),
                 global_step= step)

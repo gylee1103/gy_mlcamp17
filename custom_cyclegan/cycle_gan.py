@@ -21,24 +21,28 @@ def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_ra
 
   num_block = 4
 
-  Y_from_X = generator(input_X, is_training, num_block, "generatorG", reuse=False)
+  # do cycle with Y_from_X_sketch,
+  # attach Y_from_X to Discriminator
+  Y_from_X, Y_from_X_sketch = \
+      generator(input_X, is_training, num_block, "generatorG", reuse=False, gen_output2=True)
   X_from_Y = generator(input_Y, is_training, num_block, "generatorF", reuse=False)
 
-  X_cycled = generator(Y_from_X, is_training, num_block, "generatorF", reuse=True)
-  Y_cycled = generator(X_from_Y, is_training, num_block, "generatorG", reuse=True)
+  X_cycled = generator(Y_from_X_sketch, is_training, num_block, "generatorF", reuse=True)
+  Y_cycled, not_used = \
+      generator(X_from_Y, is_training, num_block, "generatorG", reuse=True, gen_output2=True)
 
+  noisy_input_Y = add_noise(input_Y)
   # additional guide
-  Y_from_Y = generator(input_Y, is_training, num_block, "generatorG", reuse=True)
+  Y_from_Y, not_used = \
+      generator(noisy_input_Y, is_training, num_block, "generatorG", reuse=True, gen_output2=True)
   X_from_X = generator(input_X, is_training, num_block, "generatorF", reuse=True)
   
 
   predictions = {'Y_from_X': Y_from_X, 'X_from_Y': X_from_Y,
       'X_cycled': X_cycled, 'Y_cycled': Y_cycled, 'Y_from_Y': Y_from_Y,
-      'X_from_X': X_from_X}
+      'X_from_X': X_from_X, 'Y_from_X_sketch': Y_from_X_sketch}
 
   if is_training:
-
-
     real_DX = discriminator(input_X, is_training, "discriminatorDX", reuse=False)
     fake_DX = discriminator(X_from_Y, is_training, "discriminatorDX", reuse=True)
 

@@ -32,7 +32,9 @@ class TestDataHandler(DataHandler):
         original_size = img.shape
         bigger_size = max(original_size[0], original_size[1])
 
-        mult = self.target_size / float(bigger_size)
+        mult = 1
+        if bigger_size > self.target_size:
+          mult = self.target_size / float(bigger_size)
 
 
 
