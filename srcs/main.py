@@ -7,17 +7,6 @@ import tensorflow as tf
 import numpy as np
 import datetime
 
-from db.sketch_data_handler import SketchDataHandler
-from db.pen_data_handler import PenDataHandler
-from db.test_data_handler import TestDataHandler
-from db.bezier_data_handler import BezierDataHandler
-
-import models.fcn
-import models.cgan
-import models.cycle_gan
-import models.our_cycle_gan
-
-
 time_now = datetime.datetime.now()
 
 def get_output_model_path():
@@ -152,6 +141,27 @@ def test():
 def train():
   FLAGS = tf.flags.FLAGS
   graph = tf.Graph()
+
+  if FLAGS.run_mlengine:
+    from srcs.db.sketch_data_handler import SketchDataHandler
+    from srcs.db.pen_data_handler import PenDataHandler
+    from srcs.db.test_data_handler import TestDataHandler
+    from srcs.db.bezier_data_handler import BezierDataHandler
+
+    import srcs.models.fcn
+    import srcs.models.cgan
+    import srcs.models.cycle_gan
+    import srcs.models.our_cycle_gan
+  else:
+    from db.sketch_data_handler import SketchDataHandler
+    from db.pen_data_handler import PenDataHandler
+    from db.test_data_handler import TestDataHandler
+    from db.bezier_data_handler import BezierDataHandler
+
+    import models.fcn
+    import models.cgan
+    import models.cycle_gan
+    import models.our_cycle_gan
 
   data_handler_X = SketchDataHandler(
       get_dataset_path(), FLAGS.X, FLAGS.batch_size, FLAGS.target_size)
