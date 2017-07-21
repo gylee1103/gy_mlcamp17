@@ -5,14 +5,14 @@ from __future__ import print_function
 import os.path
 import tensorflow as tf
 import numpy as np
+import scipy.misc
 import datetime
 
 time_now = datetime.datetime.now()
 def get_output_model_path():
   FLAGS = tf.flags.FLAGS
   if FLAGS.output_model_path == None:
-    output_dir = "checkpoints/" + gen_model_name
-      time_now.hour, time_now.minute)
+    output_dir = "checkpoints/" + gen_model_name()
     if FLAGS.run_mlengine:
       return os.path.join(FLAGS.mlengine_path, output_dir)
     else:
@@ -29,7 +29,7 @@ def get_dataset_path():
   else:
     return os.path.abspath("../SketchDB")
 
-def gen_model_name:
+def gen_model_name():
     FLAGS = tf.flags.FLAGS
     name = "%s_%s_%02d_%02d_%02d_%02d" % (FLAGS.model_type, FLAGS.data_type,
             time_now.month, time_now.day, time_now.hour, time_now.minute)
@@ -111,7 +111,7 @@ def test():
 
   with graph.as_default():
     data_handler_X = TestDataHandler(
-        get_dataset_path, FLAGS.X, max_size=max_size)
+        get_dataset_path(), FLAGS.X, max_size=max_size)
     num_test = data_handler_X.num_test()
 
     input_X = tf.placeholder_with_default(
