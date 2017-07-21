@@ -7,11 +7,11 @@ import tensorflow as tf
 import numpy as np
 import datetime
 
+time_now = datetime.datetime.now()
 def get_output_model_path():
-  time_now = datetime.datetime.now()
   FLAGS = tf.flags.FLAGS
   if FLAGS.output_model_path == None:
-    output_dir = "checkpoints/output_%02d_%02d_%02d_%02d" % (time_now.month, time_now.day,
+    output_dir = "checkpoints/" + gen_model_name
       time_now.hour, time_now.minute)
     if FLAGS.run_mlengine:
       return os.path.join(FLAGS.mlengine_path, output_dir)
@@ -28,6 +28,12 @@ def get_dataset_path():
     return os.path.abspath("./dataset/SketchDB")
   else:
     return os.path.abspath("../SketchDB")
+
+def gen_model_name:
+    FLAGS = tf.flags.FLAGS
+    name = "%s_%s_%02d_%02d_%02d_%02d" % (FLAGS.model_type, FLAGS.data_type,
+            time_now.month, time_now.day, time_now.hour, time_now.minute)
+    return name
 
 def parse_arguments():
 
@@ -160,6 +166,7 @@ def test():
 def train():
   FLAGS = tf.flags.FLAGS
   graph = tf.Graph()
+  output_model_path = get_output_model_path()
 
   if FLAGS.run_mlengine:
     from srcs.db.sketch_data_handler import SketchDataHandler
@@ -261,7 +268,7 @@ def train():
         exit(-1)
 
       summary_op = tf.summary.merge(summary_list)
-      summary_writer = tf.summary.FileWriter(get_output_model_path())
+      summary_writer = tf.summary.FileWriter(output_model_path)
       model_saver = tf.train.Saver(max_to_keep=1000)
 
     with tf.Session(graph=graph) as sess:
@@ -295,7 +302,7 @@ def train():
 
           if step % FLAGS.save_step == 0:
             save_path = model_saver.save(sess, 
-                os.path.join(get_output_model_path(), "model.ckpt"),
+                os.path.join(output_model_path, "model.ckpt"),
                 global_step= step)
 
 
@@ -304,7 +311,7 @@ def train():
 
       finally:
         save_path = model_saver.save(sess, 
-            os.path.join(get_output_model_path(), "model.ckpt"),
+            os.path.join(output_model_path, "model.ckpt"),
             global_step= step)
         
   finally:
