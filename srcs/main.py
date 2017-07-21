@@ -78,12 +78,26 @@ def parse_arguments():
 def test():
   FLAGS = tf.flags.FLAGS
   is_training = False
-
   graph = tf.Graph()
   max_size = 1024
 
+  # Model type
+  if FLAGS.model_type == 'fcn':
+    model = models.fcn
+  elif FLAGS.model_type == 'cgan':
+    model = models.cgan
+  elif FLAGS.model_type == 'cycle_gan':
+    model = models.cycle_gan
+  elif FLAGS.model_type == 'our_cycle_gan':
+    model = models.our_cycle_gan
+  else:
+    print("no match model for %s" % FLAGS.model_type)
+    exit(-1)
+
+
   with graph.as_default():
-    data_handler_X = TestDataHandler(FLAGS.X, max_size=max_size)
+    data_handler_X = TestDataHandler(
+        get_dataset_path, FLAGS.X, max_size=max_size)
     num_test = data_handler_X.num_test()
 
     input_X = tf.placeholder_with_default(
@@ -98,7 +112,7 @@ def test():
     # Model here
     # --------------------------------------------------------------------
 
-    [ train_op, losses, predictions ] = cycle_gan.build_model(input_X, 
+    [ train_op, losses, predictions ] = model.build_model(input_X, 
         input_Y, is_training=False)
 
     model_saver = tf.train.Saver()
@@ -132,7 +146,7 @@ def test():
 
       scipy.misc.imsave('%06d.png' % step, pen_img) 
 
-      print("count %d" % (step))
+      print("Image %d, processed" % (step))
 
 
 def train():
