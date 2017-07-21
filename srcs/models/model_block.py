@@ -1,5 +1,17 @@
 import tensorflow as tf
 
+def add_noise(input_tensor):
+  # generate random filters
+  [bs, h, w, c] = input_tensor.get_shape().as_list()
+  input_tensor = tf.transpose(input_tensor, perm=[3, 1, 2, 0])
+  random_filter = tf.random_normal([3, 3, bs, 1], mean=1.0, stddev=1)
+  output = tf.nn.depthwise_conv2d(input_tensor, filter=random_filter,
+      strides=[1, 1, 1, 1], padding="SAME")
+
+  output = tf.transpose(output, perm=[3, 1, 2, 0])
+  output = tf.clip_by_value(output, -1, 1)
+  return output
+
 def instance_normalization(x, index):
   with tf.variable_scope("instance_norm"):
     depth = x.get_shape()[3]
@@ -34,28 +46,35 @@ def generator(x, num_block, scope_name, reuse, is_gray=True, gen_output2=False):
   input = x
 
   with tf.variable_scope(scope_name, reuse=reuse) as vscope:
-    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=1, padding='SAME',
-        activation=tf.nn.relu) # H, W
+    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
+        activation=tf.nn.relu) # H/2
     x = instance_normalization(x, 0)
 
     x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
-        activation=tf.nn.relu) # H/2, W/2
+        activation=tf.nn.relu) # H/4
     x = instance_normalization(x, 1)
+    unet_x = x
 
     x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
-        activation=tf.nn.relu) # H/4, W/4
+        activation=tf.nn.relu) # H/8
     x = instance_normalization(x, 2)
 
     for ridx in range(num_block):
       x = residual_block(x, ridx, kernel_size=3)
 
-    x = tf.layers.conv2d_transpose(x, 128, kernel_size=3, strides=2, 
-        padding='SAME', activation=tf.nn.relu) # H/2, W/2
+    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
+        padding='SAME', activation=tf.nn.relu) # H/4
     x = instance_normalization(x, 3)
 
-    x = tf.layers.conv2d_transpose(x, 32, kernel_size=3, strides=2, 
-        padding='SAME', activation=tf.nn.relu) # H, W
+    # UNet : Concat here
+    x = tf.concat([x, unet_x], axis=3)
+    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
+        padding='SAME', activation=tf.nn.relu) # H/2, W/2
     x = instance_normalization(x, 4)
+
+    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
+        padding='SAME', activation=tf.nn.relu) # H, W
+    x = instance_normalization(x, 5)
 
     output = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
         padding='SAME', activation=tf.nn.tanh) # H, W
@@ -69,17 +88,16 @@ def generator(x, num_block, scope_name, reuse, is_gray=True, gen_output2=False):
 
 def discriminator(x, scope_name, reuse):
   with tf.variable_scope(scope_name, reuse=reuse) as vscope:
-    x = tf.layers.conv2d(x, 32, kernel_size=8, strides=8, padding='SAME',
-        activation=tf.nn.relu) # H/2, W/2
+    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
+        activation=tf.nn.relu) # H/2
     #x = tf.layers.batch_normalization(x, training=is_training)
     x = instance_normalization(x, 0)
     x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
-        activation=tf.nn.relu) # H/4, W/4
+        activation=tf.nn.relu) # H/4
     #x = tf.layers.batch_normalization(x, training=is_training)
     x = instance_normalization(x, 1)
     x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/8, W/8
-    #x = tf.layers.batch_normalization(x, training=is_training)
     x = instance_normalization(x, 2)
     x = tf.layers.conv2d(x, 32, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/16, W/16

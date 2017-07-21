@@ -1,53 +1,34 @@
-
 import tensorflow as tf
-from model_block import *
+from model_block import generator, discriminator, add_noise
 
-def add_noise(input_tensor):
-  # generate random filters
-  [bs, h, w, c] = input_tensor.get_shape().as_list()
-  input_tensor = tf.transpose(input_tensor, perm=[3, 1, 2, 0])
-  random_filter = tf.random_normal([3, 3, bs, 1], mean=1.0, stddev=1)
-  output = tf.nn.depthwise_conv2d(input_tensor, filter=random_filter,
-      strides=[1, 1, 1, 1], padding="SAME")
-
-  output = tf.transpose(output, perm=[3, 1, 2, 0])
-  output = tf.clip_by_value(output, -1, 1)
-  return output
-
-def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_rate=0.00004):
+def build_model(input_X, input_Y, is_training=True, num_block=4, 
+    cycle_lambda=10, learning_rate=0.0002):
   batch_size, target_size, _, target_channel = input_X.get_shape().as_list()
 
   # X is  Sketch, Y is Pen
+  Y_from_X = generator(input_X, num_block, "generatorG", reuse=False)
+  X_from_Y = generator(input_Y, num_block, "generatorF", reuse=False)
 
-  num_block = 4
-
-  # do cycle with Y_from_X_sketch,
-  # attach Y_from_X to Discriminator
-  Y_from_X, Y_from_X_sketch = \
-      generator(input_X, is_training, num_block, "generatorG", reuse=False, gen_output2=True)
-  X_from_Y = generator(input_Y, is_training, num_block, "generatorF", reuse=False)
-
-  X_cycled = generator(Y_from_X_sketch, is_training, num_block, "generatorF", reuse=True)
-  Y_cycled, not_used = \
-      generator(X_from_Y, is_training, num_block, "generatorG", reuse=True, gen_output2=True)
+  X_cycled = generator(Y_from_X, num_block, "generatorF", reuse=True)
+  Y_cycled = generator(X_from_Y, num_block, "generatorG", reuse=True)
 
   noisy_input_Y = add_noise(input_Y)
+
   # additional guide
-  Y_from_Y, not_used = \
-      generator(noisy_input_Y, is_training, num_block, "generatorG", reuse=True, gen_output2=True)
-  X_from_X = generator(input_X, is_training, num_block, "generatorF", reuse=True)
+  Y_from_Y = generator(noisy_input_Y, num_block, "generatorG", reuse=True)
+  X_from_X = generator(input_X, num_block, "generatorF", reuse=True)
   
 
   predictions = {'Y_from_X': Y_from_X, 'X_from_Y': X_from_Y,
-      'X_cycled': X_cycled, 'Y_cycled': Y_cycled, 'Y_from_Y': Y_from_Y,
-      'X_from_X': X_from_X, 'Y_from_X_sketch': Y_from_X_sketch}
+      'X_cycled': X_cycled, 'Y_cycled': Y_cycled}
 
   if is_training:
-    real_DX = discriminator(input_X, is_training, "discriminatorDX", reuse=False)
-    fake_DX = discriminator(X_from_Y, is_training, "discriminatorDX", reuse=True)
 
-    real_DY = discriminator(input_Y, is_training, "discriminatorDY", reuse=False)
-    fake_DY = discriminator(Y_from_X, is_training, "discriminatorDY", reuse=True)
+    real_DX = discriminator(input_X, "discriminatorDX", reuse=False)
+    fake_DX = discriminator(X_from_Y, "discriminatorDX", reuse=True)
+
+    real_DY = discriminator(input_Y, "discriminatorDY", reuse=False)
+    fake_DY = discriminator(Y_from_X, "discriminatorDY", reuse=True)
 
     loss_real_DX = tf.reduce_mean(tf.squared_difference(real_DX, tf.ones_like(real_DX)))
     loss_fake_DX = tf.reduce_mean(tf.square(fake_DX))
@@ -66,6 +47,7 @@ def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_ra
     guide_loss_Y = tf.reduce_mean(tf.abs(Y_from_Y - input_Y))
     guide_loss = guide_loss_X + guide_loss_Y
 
+
     loss_GAN_F = tf.reduce_mean(tf.squared_difference(fake_DX, tf.ones_like(fake_DX)))
 
     loss_GAN_G = tf.reduce_mean(tf.squared_difference(fake_DY, tf.ones_like(fake_DY)))
@@ -73,9 +55,8 @@ def build_model(input_X, input_Y, cycle_lambda=10, is_training=True, learning_ra
     loss_F = loss_GAN_F + cycle_lambda * cycle_loss + cycle_lambda * guide_loss
     loss_G = loss_GAN_G + cycle_lambda * cycle_loss + cycle_lambda * guide_loss
 
-    losses = {'loss_G': loss_G, 'loss_F': loss_F, 'loss_DX': loss_DX,
-        'loss_DY': loss_DY, 'cycle_loss': cycle_loss, 'loss_GAN_G': loss_GAN_G,
-        'guide_loss': guide_loss}
+    losses = {'loss_G': loss_GAN_G, 'loss_F': loss_GAN_F, 'loss_DX': loss_DX,
+        'loss_DY': loss_DY, 'loss_cycle': cycle_loss, 'loss': loss_G}
 
     t_vars = tf.trainable_variables()
 
