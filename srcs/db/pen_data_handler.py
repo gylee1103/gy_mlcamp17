@@ -45,8 +45,8 @@ class PenDataHandler(DataHandler):
 
       # Select cropping range between (target_size/2 ~ original_size)
       original_h, original_w = image.shape
-      crop_width = np.random.randint(self.target_size/2, original_w)
-      crop_height = np.random.randint(self.target_size/2, original_h)
+      crop_width = np.random.randint(self.target_size/2, min(self.target_size*2, original_w))
+      crop_height = np.random.randint(self.target_size/2, min(self.target_size*2, original_h))
       topleft_x = np.random.randint(0, original_w - crop_width)
       topleft_y = np.random.randint(0, original_h - crop_height)
       cropped_img = image[topleft_y:topleft_y+crop_height,
@@ -66,13 +66,18 @@ class PenDataHandler(DataHandler):
         # randomly select index
         indexes = np.random.randint(0, self._total_num, self.batch_size)
         sz = self.target_size
-        output = np.zeros([self.batch_size, sz, sz, 1])
+        output = np.ones([self.batch_size, sz, sz, 1])
 
         for i in range(len(indexes)):
           index = indexes[i]
           output[i] = self._random_preprocessing(scipy.misc.imread(
             self._image_paths[index], mode='L').astype(np.float32),
             self.target_size).reshape([sz, sz, 1])
+          while np.amin(output[i]) == np.amax(output[i]): # some data are strange..
+            output[i] = self._random_preprocessing(scipy.misc.imread(
+              self._image_paths[index], mode='L').astype(np.float32),
+              self.target_size).reshape([sz, sz, 1])
+
         queue.put(output)
 
 

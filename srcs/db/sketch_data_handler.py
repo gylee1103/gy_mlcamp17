@@ -71,6 +71,11 @@ class SketchDataHandler(DataHandler):
           output[i] = self._random_preprocessing(scipy.misc.imread(
             self._image_paths[index], mode='L').astype(np.float),
             self.target_size).reshape([sz, sz, 1])
+          while np.amin(output[i]) == np.amax(output[i]): # some data are strange..
+            output[i] = self._random_preprocessing(scipy.misc.imread(
+              self._image_paths[index], mode='L').astype(np.float32),
+              self.target_size).reshape([sz, sz, 1])
+
         queue.put(output)
 
 
