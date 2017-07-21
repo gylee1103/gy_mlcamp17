@@ -7,9 +7,8 @@ import tensorflow as tf
 import numpy as np
 import datetime
 
-time_now = datetime.datetime.now()
-
 def get_output_model_path():
+  time_now = datetime.datetime.now()
   FLAGS = tf.flags.FLAGS
   if FLAGS.output_model_path == None:
     output_dir = "checkpoints/output_%02d_%02d_%02d_%02d" % (time_now.month, time_now.day,
@@ -69,7 +68,27 @@ def test():
   is_training = False
   graph = tf.Graph()
   max_size = 1024
+  if FLAGS.run_mlengine:
+    from srcs.db.sketch_data_handler import SketchDataHandler
+    from srcs.db.pen_data_handler import PenDataHandler
+    from srcs.db.test_data_handler import TestDataHandler
+    from srcs.db.bezier_data_handler import BezierDataHandler
 
+    import srcs.models.fcn
+    import srcs.models.cgan
+    import srcs.models.cycle_gan
+    import srcs.models.our_cycle_gan
+    models = srcs.models
+  else:
+    from db.sketch_data_handler import SketchDataHandler
+    from db.pen_data_handler import PenDataHandler
+    from db.test_data_handler import TestDataHandler
+    from db.bezier_data_handler import BezierDataHandler
+
+    import models.fcn
+    import models.cgan
+    import models.cycle_gan
+    import models.our_cycle_gan
   # Model type
   if FLAGS.model_type == 'fcn':
     model = models.fcn
@@ -152,6 +171,7 @@ def train():
     import srcs.models.cgan
     import srcs.models.cycle_gan
     import srcs.models.our_cycle_gan
+    models = srcs.models
   else:
     from db.sketch_data_handler import SketchDataHandler
     from db.pen_data_handler import PenDataHandler
