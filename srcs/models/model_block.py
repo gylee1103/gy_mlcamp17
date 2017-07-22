@@ -38,7 +38,7 @@ def residual_block(x, index, kernel_size=3, activation=tf.nn.relu):
   return x
 
 
-def generator(x, num_block, scope_name, reuse, is_gray=True, gen_output2=False):
+def generator(x, num_block, scope_name, reuse, is_gray=True, gen_output2=False, z=None):
   if is_gray:
     image_channel = 1
   else:
@@ -46,6 +46,15 @@ def generator(x, num_block, scope_name, reuse, is_gray=True, gen_output2=False):
   input = x
 
   with tf.variable_scope(scope_name, reuse=reuse) as vscope:
+    if z is not None:
+        z = tf.layers.conv2d_transpose(z, 64, kernel_size=3, strides=2, 
+                padding='SAME', activation=tf.nn.relu) # H/16
+        z = instance_normalization(z, 4)
+        z = tf.layers.conv2d_transpose(z, 64, kernel_size=3, strides=2, 
+                padding='SAME', activation=tf.nn.relu) # H/8
+        z = instance_normalization(z, 4)
+
+
     x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/2
     x = instance_normalization(x, 0)
@@ -59,8 +68,18 @@ def generator(x, num_block, scope_name, reuse, is_gray=True, gen_output2=False):
         activation=tf.nn.relu) # H/8
     x = instance_normalization(x, 2)
 
+    # Concat z here
+    if z is not None:
+        x = tf.concat([x, z], axis=3)
+
     for ridx in range(num_block):
       x = residual_block(x, ridx, kernel_size=3)
+
+    if gen_output2:
+        # Generate z value
+        z = tf.layers.conv2d(x, 2, kernel_size=3, strides=4, padding='SAME',
+            activation=None) # H/32 (8 x 8)
+
 
     x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H/4
@@ -68,8 +87,9 @@ def generator(x, num_block, scope_name, reuse, is_gray=True, gen_output2=False):
 
     # UNet : Concat here
     x = tf.concat([x, unet_x], axis=3)
+
     x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
-        padding='SAME', activation=tf.nn.relu) # H/2, W/2
+        padding='SAME', activation=tf.nn.relu) # H/1, W/2
     x = instance_normalization(x, 4)
 
     x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
@@ -80,9 +100,7 @@ def generator(x, num_block, scope_name, reuse, is_gray=True, gen_output2=False):
         padding='SAME', activation=tf.nn.tanh) # H, W
 
     if gen_output2:
-      output2 = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
-          padding='SAME', activation=tf.nn.tanh) # H, W
-      return output, output2
+      return output, z
 
     return output
 
