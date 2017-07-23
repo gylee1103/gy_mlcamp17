@@ -70,7 +70,9 @@ def generator(x, scope_name, reuse, is_gray=True, gen_output2=False, z=None):
     x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/4
     x = instance_normalization(x, 1)
+    unet = x
     x = residual_block(x, 1, kernel_size=3)
+
 
     x = tf.layers.conv2d(x, 128, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/8
@@ -88,6 +90,8 @@ def generator(x, scope_name, reuse, is_gray=True, gen_output2=False, z=None):
         padding='SAME', activation=tf.nn.relu) # H/4
     x = instance_normalization(x, 3)
     x = residual_block(x, 3, kernel_size=3)
+
+    x = tf.concat([x, unet], axis=3)
 
     x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H/1, W/2

@@ -19,7 +19,7 @@ def build_model(input_X, input_Y, is_training=True, cycle_lambda=10,
 
   # additional guide
   Y_from_Y = generator(noisy_input_Y, "generatorG", reuse=True)
-  #X_from_X = generator(input_X, "generatorF", reuse=True)
+  X_from_X = generator(input_X, "generatorF", reuse=True)
 
   predictions = {'Y_from_X': Y_from_X, 'X_from_Y': X_from_Y,
           'X_cycled': X_cycled, 'Y_cycled': Y_cycled, 'noisy_X': input_X,
@@ -46,14 +46,14 @@ def build_model(input_X, input_Y, is_training=True, cycle_lambda=10,
     cycle_loss = cycle_loss_X + cycle_loss_Y
 
     # guide loss
-    #guide_loss_X = tf.reduce_mean(tf.abs(X_from_X - input_X))
+    guide_loss_X = tf.reduce_mean(tf.abs(X_from_X - input_X))
     guide_loss_Y = tf.reduce_mean(tf.abs(Y_from_Y - input_Y))
     guide_loss = guide_loss_Y
 
     loss_GAN_F = tf.reduce_mean(tf.squared_difference(fake_DX, tf.ones_like(fake_DX)))
     loss_GAN_G = tf.reduce_mean(tf.squared_difference(fake_DY, tf.ones_like(fake_DY)))
 
-    loss_F = loss_GAN_F + cycle_lambda * cycle_loss #+ cycle_lambda * guide_loss
+    loss_F = loss_GAN_F + cycle_lambda * cycle_loss + cycle_lambda * guide_loss
     loss_G = loss_GAN_G + cycle_lambda * cycle_loss + cycle_lambda * guide_loss
 
     losses = {'loss_G': loss_GAN_G, 'loss_F': loss_GAN_F, 'loss_DX': loss_DX,
