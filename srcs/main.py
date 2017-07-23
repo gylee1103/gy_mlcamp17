@@ -37,15 +37,13 @@ def gen_model_name():
 
 def parse_arguments():
 
-  tf.flags.DEFINE_string('model_type', 'cycle_gan',
+  tf.flags.DEFINE_string('model_type', 'our_cycle_gan',
       'Choose one of four types: fcn, cgan, cycle_gan, our_cycle_gan, default: our_cycle_gan')
   tf.flags.DEFINE_string('data_type', 'bezier',
       'Choose dataset for pen data: bezier, real, all, default: bezier')
 
-  tf.flags.DEFINE_integer('batch_size', 8, 'batch size, default: 12')
+  tf.flags.DEFINE_integer('batch_size', 6, 'batch size, default: 6')
   tf.flags.DEFINE_integer('target_size', 256, 'Image size, default: 256')
-  tf.flags.DEFINE_integer(
-      'num_block', 4, 'the number of residual block, default: 4')
 
   tf.flags.DEFINE_integer(
       'log_step', 100, 'How often write the summary, default: 100')

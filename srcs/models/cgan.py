@@ -2,14 +2,14 @@
 import tensorflow as tf
 from model_block import generator, discriminator, add_noise
 
-def build_model(input_X, input_Y, is_training=True, num_block=4, learning_rate=0.0002):
+def build_model(input_X, input_Y, is_training=True, learning_rate=0.0002):
   batch_size, target_size, _, target_channel = input_X.get_shape().as_list()
 
   # X is  Sketch, Y is Pen
 
   noisy_input_Y = add_noise(input_Y)
-  Y_from_X = generator(input_X, num_block, "generatorG", reuse=False)
-  Y_from_Y = generator(noisy_input_Y, num_block, "generatorG", reuse=True)
+  Y_from_X = generator(input_X, "generatorG", reuse=False)
+  Y_from_Y = generator(noisy_input_Y, "generatorG", reuse=True)
 
   predictions = {'Y_from_X': Y_from_X, 'Y_from_Y': Y_from_Y}
 
