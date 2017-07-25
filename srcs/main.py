@@ -66,6 +66,7 @@ def parse_arguments():
   tf.flags.DEFINE_boolean('run_mlengine', False, 'whether to run in mlengine environment')
   tf.flags.DEFINE_string('mlengine_path', 'gs://sketch-simplification-mlengine/', 'default gs path')
   tf.flags.DEFINE_integer('test_size', 512, 'Test input max size, default: 512')
+  tf.flags.DEFINE_string('test_path', './results', 'Path to save output results')
 
 
 def test():
@@ -73,6 +74,12 @@ def test():
   is_training = False
   graph = tf.Graph()
   max_size = FLAGS.test_size
+  output_path = os.path.abspath(FLAGS.test_path)
+  try:
+    os.makedirs(output_path)
+  except:
+    pass
+
   if FLAGS.run_mlengine:
     from srcs.db.sketch_data_handler import SketchDataHandler
     from srcs.db.pen_data_handler import PenDataHandler
@@ -155,10 +162,12 @@ def test():
       height, width = resized_size
       pen_img = pen_img.reshape([max_size, max_size])
       pen_img = pen_img[0:height, 0:width]
-      pen_img = scipy.misc.imresize(pen_img, original_size)
+      pen_img = scipy.misc.imresize(pen_img, original_size, interp='nearest')
       pen_img = pen_img * 128.0 + 128.0
 
-      scipy.misc.imsave('%06d.png' % step, pen_img) 
+      filepath = os.path.join(output_path, ('%06d.png' % step))
+
+      scipy.misc.imsave(filepath, pen_img) 
 
       print("Image %d, processed" % (step))
 

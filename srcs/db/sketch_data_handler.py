@@ -45,8 +45,8 @@ class SketchDataHandler(DataHandler):
 
       # Select cropping range between (target_size/2 ~ original_size)
       original_h, original_w = image.shape
-      crop_width = np.random.randint(self.target_size/2, original_w)
-      crop_height = np.random.randint(self.target_size/2, original_h)
+      crop_width = np.random.randint(self.target_size/3, min(self.target_size, original_w))
+      crop_height = np.random.randint(self.target_size/3, min(self.target_size, original_h))
       topleft_x = np.random.randint(0, original_w - crop_width)
       topleft_y = np.random.randint(0, original_h - crop_height)
       cropped_img = image[topleft_y:topleft_y+crop_height,
