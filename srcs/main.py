@@ -65,13 +65,14 @@ def parse_arguments():
 
   tf.flags.DEFINE_boolean('run_mlengine', False, 'whether to run in mlengine environment')
   tf.flags.DEFINE_string('mlengine_path', 'gs://sketch-simplification-mlengine/', 'default gs path')
+  tf.flags.DEFINE_integer('test_size', 512, 'Test input max size, default: 512')
 
 
 def test():
   FLAGS = tf.flags.FLAGS
   is_training = False
   graph = tf.Graph()
-  max_size = 1024
+  max_size = FLAGS.test_size
   if FLAGS.run_mlengine:
     from srcs.db.sketch_data_handler import SketchDataHandler
     from srcs.db.pen_data_handler import PenDataHandler
@@ -93,6 +94,7 @@ def test():
     import models.cgan
     import models.cycle_gan
     import models.our_cycle_gan
+
   # Model type
   if FLAGS.model_type == 'fcn':
     model = models.fcn
@@ -171,6 +173,7 @@ def train():
     from srcs.db.pen_data_handler import PenDataHandler
     from srcs.db.test_data_handler import TestDataHandler
     from srcs.db.bezier_data_handler import BezierDataHandler
+    from srcs.db.line_data_handler import LineDataHandler
 
     import srcs.models.fcn
     import srcs.models.cgan
@@ -182,6 +185,7 @@ def train():
     from db.pen_data_handler import PenDataHandler
     from db.test_data_handler import TestDataHandler
     from db.bezier_data_handler import BezierDataHandler
+    from db.line_data_handler import LineDataHandler
 
     import models.fcn
     import models.cgan
@@ -201,6 +205,9 @@ def train():
   elif FLAGS.data_type == 'all':
     data_handler_Y = MixedDataHandler(
         get_dataset_path(), FLAGS.Y, FLAGS.batch_size, FLAGS.target_size)
+  elif FLAGS.data_type == 'line':
+    data_handler_Y = LineDataHandler(
+        FLAGS.batch_size, FLAGS.target_size)
   else:
     print("no match dataset for %s" % FLAGS.data_type)
     exit(-1)
@@ -249,7 +256,7 @@ def train():
           tf.summary.image("Y/Y_after_FCN", predictions['Y_after_FCN']),
           tf.summary.scalar("loss/loss_FCN_X", losses["loss_FCN_X"]),
         ])
-      elif model == models.cycle_gan or model == models.our_cycle_gan:
+      elif (model == models.cycle_gan or model == models.our_cycle_gan):
         summary_list.extend([
             tf.summary.image("Y/X_from_Y", predictions['X_from_Y']),
             tf.summary.image("X/X_cycled", predictions['X_cycled']),
@@ -264,6 +271,12 @@ def train():
       else:
         print("not reached here")
         exit(-1)
+
+      if model == models.our_cycle_gan:
+        summary_list.extend([
+            tf.summary.image("extra", predictions['extra']),
+        ])
+
 
       summary_op = tf.summary.merge(summary_list)
       summary_writer = tf.summary.FileWriter(output_model_path)
