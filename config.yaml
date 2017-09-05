@@ -1,4 +1,0 @@
-trainingInput:
-  scaleTier: BASIC_GPU
-  runtimeVersion: "1.2"
-  region: "asia-east1"
