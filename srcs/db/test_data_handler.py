@@ -5,7 +5,7 @@ import os
 import scipy
 import scipy.misc
 from PIL import Image
-from data_handler import DataHandler
+from db.data_handler import DataHandler
 
 class TestDataHandler(DataHandler):
     def __init__(self, root_path, paths_file, max_size=1024):

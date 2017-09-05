@@ -9,7 +9,7 @@ import scipy
 import scipy.misc
 import scipy.ndimage
 from PIL import Image
-from data_handler import DataHandler
+from db.data_handler import DataHandler
 
 class SketchDataHandler(DataHandler):
     def __init__(self, root_path, paths_file, batch_size, target_size):
@@ -37,21 +37,24 @@ class SketchDataHandler(DataHandler):
 
     def _random_preprocessing(self, image, size):
       # rotate image
-      rand_degree = np.random.randint(0, 180)
+      rand_degree = np.random.randint(0, 90)
       rand_flip = np.random.randint(0, 2)
-      image = scipy.ndimage.interpolation.rotate(image, rand_degree, cval=255)
       if rand_flip == 1:
         image = np.flip(image, 1)
+      image = scipy.ndimage.interpolation.rotate(image, rand_degree, cval=255)
 
       # Select cropping range between (target_size/2 ~ original_size)
       original_h, original_w = image.shape
-      crop_width = np.random.randint(self.target_size/3, min(self.target_size, original_w))
-      crop_height = np.random.randint(self.target_size/3, min(self.target_size, original_h))
+      #crop_width = np.random.randint(self.target_size/3, min(self.target_size, original_w))
+      #crop_height = np.random.randint(self.target_size/3, min(self.target_size, original_h))
+      crop_width = self.target_size
+      crop_height = self.target_size
       topleft_x = np.random.randint(0, original_w - crop_width)
       topleft_y = np.random.randint(0, original_h - crop_height)
       cropped_img = image[topleft_y:topleft_y+crop_height,
           topleft_x:topleft_x+crop_width]
-      output = scipy.misc.imresize(cropped_img, [self.target_size, self.target_size])
+      #output = scipy.misc.imresize(cropped_img, [self.target_size, self.target_size])
+      output = cropped_img
 
       output = (output - 128.0) / 128.0
       return output

@@ -8,7 +8,7 @@ import numpy as np
 import scipy
 import scipy.misc
 from PIL import Image
-from data_handler import DataHandler
+from db.data_handler import DataHandler
 
 class LineDataHandler(DataHandler):
     def __init__(self, batch_size, target_size): # Not use datafiles

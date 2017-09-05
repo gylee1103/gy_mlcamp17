@@ -3,7 +3,7 @@ import copy
 import numpy as np
 
 class ImagePool(object):
-    def __init__(self, pool_size=50):
+    def __init__(self, pool_size=200):
         self.pool_size = pool_size
         self.num = 0
         self.images = []

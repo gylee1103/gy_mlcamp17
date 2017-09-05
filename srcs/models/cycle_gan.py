@@ -1,6 +1,6 @@
 import tensorflow as tf
-from model_block import generator, discriminator
-from augmentation import random_contrast, random_noise
+from models.model_block import generator, discriminator
+from models.augmentation import random_contrast
 
 def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
     is_training=True, cycle_lambda=10, learning_rate=0.0002):
@@ -17,13 +17,12 @@ def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
   P_cycled = generator(S_from_P, "generatorG", reuse=True)
 
   # additional guide
-  noisy_input_P = random_noise(input_P)
-  P_from_P = generator(noisy_input_P, "generatorG", reuse=True)
+  P_from_P = generator(input_P, "generatorG", reuse=True)
   S_from_S = generator(input_S, "generatorF", reuse=True)
 
   predictions = {'P_from_S': P_from_S, 'S_from_P': S_from_P,
           'S_cycled': S_cycled, 'P_cycled': P_cycled, 
-          'noisy_S': input_S, 'noisy_P': noisy_input_P}
+          'noisy_S': input_S}
 
   if is_training:
 
@@ -57,7 +56,8 @@ def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
     loss_G = loss_GAN_G + cycle_lambda * loss_cycle + cycle_lambda * guide_loss
 
     losses = {'loss_G': loss_GAN_G, 'loss_F': loss_GAN_F, 'loss_DS': loss_DS,
-        'loss_DP': loss_DP, 'loss_cycle': loss_cycle, 'loss': loss_G}
+        'loss_DP': loss_DP, 'loss_cycle': loss_cycle, 'loss': loss_G,
+        'loss_cycle_S': loss_cycle_S, 'loss_cycle_P': loss_cycle_P}
 
     t_vars = tf.trainable_variables()
 
@@ -74,9 +74,18 @@ def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
       F_optimizer = optimizer.minimize(loss_F, var_list=F_vars)
       DS_optimizer = optimizer.minimize(loss_DS, var_list=DS_vars)
       DP_optimizer = optimizer.minimize(loss_DP, var_list=DP_vars)
-
     with tf.control_dependencies([G_optimizer, DP_optimizer, F_optimizer, DS_optimizer]):
       train_op = tf.no_op(name='train_op')
+
+    #with tf.control_dependencies(update_ops):
+    #  G_gvs = optimizer.compute_gradients(loss_G, var_list=G_vars)
+    #  F_gvs = optimizer.compute_gradients(loss_F, var_list=F_vars)
+    #  DS_gvs = optimizer.compute_gradients(loss_DS, var_list=DS_vars)
+    #  DP_gvs = optimizer.compute_gradients(loss_DP, var_list=DP_vars)
+    #  gvs = G_gvs + F_gvs + DS_gvs + DP_gvs
+
+    #  capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gvs]
+    #  train_op = optimizer.apply_gradients(capped_gvs)
 
   else:
     train_op = None

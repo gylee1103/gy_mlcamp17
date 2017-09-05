@@ -8,7 +8,7 @@ import numpy as np
 import scipy
 import scipy.misc
 from PIL import Image
-from data_handler import DataHandler
+from db.data_handler import DataHandler
 
 class BezierDataHandler(DataHandler):
     def __init__(self, batch_size, target_size): # Not use datafiles
@@ -129,4 +129,4 @@ class BezierDataHandler(DataHandler):
 if __name__ == '__main__':
   test =  BezierDataHandler(10, 256)
   canvases = test.next()
-  print canvases[0]
+  print(canvases[0])

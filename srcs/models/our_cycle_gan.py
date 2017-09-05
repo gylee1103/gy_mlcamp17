@@ -1,6 +1,6 @@
 import tensorflow as tf
-from model_block import generator, discriminator
-from augmentation import random_contrast, random_noise
+from models.model_block import generator, discriminator
+from models.augmentation import random_contrast
 
 def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
     is_training=True, cycle_lambda=10, learning_rate=0.0002):
@@ -20,15 +20,14 @@ def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
   P_cycled, _ = generator(S_from_P, "generatorG", reuse=True, separate_flow=True)
 
   # additional guide
-  noisy_input_P = add_noise(input_P)
   P_from_P, _ = \
-      generator(noisy_input_P, "generatorG", reuse=True, separate_flow=True)
+      generator(input_P, "generatorG", reuse=True, separate_flow=True)
   S_from_S = generator(input_S, "generatorF", reuse=True)
   
 
   predictions = {'P_from_S': P_from_S, 'S_from_P': S_from_P,
       'S_cycled': S_cycled, 'P_cycled': P_cycled,
-      'noisy_X': input_S, 'noisy_Y': noisy_input_P, 'extra': P_from_S_extra}
+      'noisy_S': input_S, 'extra': P_from_S_extra}
 
   if is_training:
     real_DS = discriminator(input_S, "discriminatorDS", reuse=False)
@@ -61,7 +60,9 @@ def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
     loss_G = loss_GAN_G + cycle_lambda * loss_cycle + cycle_lambda * guide_loss 
 
     losses = {'loss_G': loss_GAN_G, 'loss_F': loss_GAN_F, 'loss_DS': loss_DS,
-        'loss_DP': loss_DP, 'loss_cycle': loss_cycle, 'loss': loss_G}
+        'loss_DP': loss_DP, 'loss_cycle': loss_cycle, 'loss': loss_G,
+        'loss_cycle_S': loss_cycle_S, 'loss_cycle_P': loss_cycle_P}
+
 
     t_vars = tf.trainable_variables()
 

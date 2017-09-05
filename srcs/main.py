@@ -24,7 +24,7 @@ def get_output_model_dir():
   if FLAGS.output_model_dir == None:
     name = "%s_%s_%02d_%02d_%02d_%02d" % (FLAGS.model_type, FLAGS.data_type,
             time_now.month, time_now.day, time_now.hour, time_now.minute)
-    output_dir = "checkpoints/" + name()
+    output_dir = "checkpoints/" + name
     return output_dir
   else:
     return FLAGS.output_model_dir
@@ -63,7 +63,7 @@ def parse_arguments():
 
   # Testing Configuration
   tf.flags.DEFINE_string('mode', 'train', 'Execution mode(train or test), default: train')
-  tf.flags.DEFINE_integer('test_size', 512, 'Test input max size, default: 512')
+  tf.flags.DEFINE_integer('test_size', 1024, 'Test input max size, default: 512')
   tf.flags.DEFINE_string('T', 'test_list.txt',
       'Text file that contains paths of files for testing. default: test_list.txt')
   tf.flags.DEFINE_string('test_dir', './results', 'Path to save output results')
@@ -94,7 +94,7 @@ def test():
   with graph.as_default():
     data_handler_T = TestDataHandler(
         get_data_dir(), FLAGS.T, max_size=max_size)
-    num_test = data_handler_X.num_test()
+    num_test = data_handler_T.num_test()
 
     input_S = tf.placeholder_with_default(
         tf.zeros([1, max_size, max_size, 1]),
@@ -135,7 +135,7 @@ def test():
       pen_img = scipy.misc.imresize(pen_img, original_size, interp='nearest')
       pen_img = pen_img * 128.0 + 128.0
 
-      filepath = os.path.join(output_path, ('%06d.png' % step))
+      filepath = os.path.join(output_path, ('%d.png' % step))
 
       scipy.misc.imsave(filepath, pen_img) 
 
@@ -198,7 +198,6 @@ def train():
         tf.summary.image("P/input_P", input_P),
         tf.summary.image("P/S_from_P", predictions['S_from_P']),
         tf.summary.image("P/P_cycled", predictions['P_cycled']),
-        tf.summary.image("P/noisy_P", predictions['noisy_P']),
 
         tf.summary.scalar("loss/loss_cycle_S", losses['loss_cycle_S']),
         tf.summary.scalar("loss/loss_cycle_P", losses['loss_cycle_P']),
@@ -250,8 +249,8 @@ def train():
           result = sess.run(fetch_dict,
               feed_dict={input_S: data_handler_S.next(),
                 input_P: data_handler_P.next(),
-                input_FS_pool: fake_pen_pool(FP),
-                input_FP_pool: fake_sketch_pool(FS),})
+                input_FS_pool: fake_sketch_pool(FS),
+                input_FP_pool: fake_pen_pool(FP),})
 
           if step % FLAGS.log_step == 0:
             summary_writer.add_summary(result["summary"], step)
@@ -272,8 +271,8 @@ def train():
             global_step= step)
         
   finally:
-    data_handler_X.kill()
-    data_handler_Y.kill()
+    data_handler_S.kill()
+    data_handler_P.kill()
 
 def main(args=None):
   FLAGS = tf.flags.FLAGS

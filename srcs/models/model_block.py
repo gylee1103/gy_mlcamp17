@@ -32,49 +32,33 @@ def generator(x, scope_name, reuse, is_gray=True, separate_flow=False):
     image_channel = 3
 
   with tf.variable_scope(scope_name, reuse=reuse) as vscope:
+    # Downsampling
     x = tf.layers.conv2d(x, 64, kernel_size=7, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/2
     x = instance_normalization(x, 0)
-    #x = residual_block(x, 0, kernel_size=3)
 
     x = tf.layers.conv2d(x, 128, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/4
     x = instance_normalization(x, 1)
-    #unet = x
-    #x = residual_block(x, 1, kernel_size=3)
 
-    x = tf.layers.conv2d(x, 128, kernel_size=3, strides=2, padding='SAME',
-        activation=tf.nn.relu) # H/8
-    x = instance_normalization(x, 2)
-    #x = residual_block(x, 2, kernel_size=3)
-
-    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
-        padding='SAME', activation=tf.nn.relu) # H/4
-    x = instance_normalization(x, 3)
-    #x = residual_block(x, 3, kernel_size=3)
-
-    # Unet Concat
-    #x = tf.concat([x, unet], axis=3)
-
-    # Residual
+    # Residual blocks
     for i in range(5):
       x = residual_block(x, i, kernel_size=3)
 
-    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
+    # Upsampling
+    x = tf.layers.conv2d_transpose(x, 128, kernel_size=3, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H/2, W/2
-    x = instance_normalization(x, 4)
-    #x = residual_block(x, 4, kernel_size=3)
+    x = instance_normalization(x, 2)
 
-    x = tf.layers.conv2d_transpose(x, 64, kernel_size=3, strides=2, 
+    x = tf.layers.conv2d_transpose(x, 64, kernel_size=7, strides=2, 
         padding='SAME', activation=tf.nn.relu) # H, W
-    x = instance_normalization(x, 5)
-    #x = residual_block(x, 5, kernel_size=3)
+    x = instance_normalization(x, 3)
 
-    output = tf.layers.conv2d_transpose(x, image_channel, kernel_size=7, strides=1, 
+    output = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
         padding='SAME', activation=tf.nn.tanh) # H, W
 
     if separate_flow: # Our modified cyclegan
-      extra_output = tf.layers.conv2d_transpose(x, image_channel, kernel_size=7, strides=1, 
+      extra_output = tf.layers.conv2d_transpose(x, image_channel, kernel_size=3, strides=1, 
         padding='SAME', activation=tf.nn.tanh) # H, W
       return output, extra_output
     else:

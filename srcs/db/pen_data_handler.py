@@ -9,7 +9,7 @@ import scipy
 import scipy.misc
 import scipy.ndimage
 from PIL import Image
-from data_handler import DataHandler
+from db.data_handler import DataHandler
 
 class PenDataHandler(DataHandler):
     def __init__(self, root_path, paths_file, batch_size, target_size):
