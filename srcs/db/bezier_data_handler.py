@@ -25,6 +25,8 @@ class BezierDataHandler(DataHandler):
     def drawLine(self, points, canvas):
         h, w, _ = canvas.shape
         x1, y1, x2, y2, x3, y3, x4, y4 = points
+        #brush_r = np.random.randint(0, 3)
+        brush_r = 1
         for i in range(0, 1000):
             perc = i / 1000.0
             xa = self.getPt(x1, x2, perc)
@@ -42,25 +44,40 @@ class BezierDataHandler(DataHandler):
             x = int(self.getPt(xm, xn, perc))
             y = int(self.getPt(ym, yn, perc))
 
-            for x_ in range(max(0, x-1), min(w, x+1)):
-                for y_ in range(max(0, y-1), min(h, y+1)):
-                    canvas[y_, x_] = 1
-            #canvas[y, x] = 1
+            if brush_r == 0:
+              canvas[y, x] = 1
+            elif brush_r == 1:
+              for x_ in range(max(0, x-1), min(w, x+1)):
+                  for y_ in range(max(0, y-1), min(h, y+1)):
+                      canvas[y_, x_] = 1
+            else:
+              for x_ in range(max(0, x-2), min(w, x+2)):
+                  for y_ in range(max(0, y-2), min(h, y+2)):
+                      canvas[y_, x_] = 1
+
 
     def drawCircle(self, canvas):
       h, w, _ = canvas.shape
       r = np.random.randint(10, 50, 1)
       a, b = np.random.randint(r, 256-r, 2)
+      #brush_r = np.random.randint(0, 3)
+      brush_r = 1
       for i in range(0, 1000):
           t = math.pi * 2.0 * i / 1000.0
           x = int(a + r * math.cos(t))
           y = int(b + r * math.sin(t))
 
-          for x_ in range(max(0, x-1), min(w, x+1)):
-              for y_ in range(max(0, y-1), min(h, y+1)):
-                  canvas[y_, x_] = 1
-          #canvas[y, x] = 1
-   
+          if brush_r == 0:
+            canvas[y, x] = 1
+          elif brush_r == 1:
+            for x_ in range(max(0, x-1), min(w, x+1)):
+                for y_ in range(max(0, y-1), min(h, y+1)):
+                    canvas[y_, x_] = 1
+          else:
+            for x_ in range(max(0, x-2), min(w, x+2)):
+                for y_ in range(max(0, y-2), min(h, y+2)):
+                    canvas[y_, x_] = 1
+
     def _draw_canvas(self):
       canvas_size = int(self.target_size * 1.5)
       canvas = np.zeros([canvas_size, canvas_size, 1])

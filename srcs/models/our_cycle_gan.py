@@ -45,13 +45,18 @@ def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
     loss_DP = (loss_real_DP + loss_fake_DP) / 2
 
     loss_cycle_S = tf.reduce_mean(tf.abs(S_cycled - input_S))
-    loss_cycle_P = tf.reduce_mean(tf.abs(P_cycled - input_P))
-    loss_cycle = loss_cycle_S + loss_cycle_P
+    #loss_cycle_P = tf.reduce_mean(tf.abs(P_cycled - input_P)) # intentionally sum
+    loss_cycle_P = tf.reduce_mean(tf.abs(P_cycled - input_P)) # intentionally sum
+    loss_cycle_P_balance = tf.cond(loss_cycle_P < 0.01, lambda: 10*loss_cycle_P,
+        lambda: loss_cycle_P)
+    loss_cycle = loss_cycle_S + loss_cycle_P_balance
 
     # guide loss(push to identity function)
     guide_loss_S = tf.reduce_mean(tf.abs(S_from_S - input_S))
     guide_loss_P = tf.reduce_mean(tf.abs(P_from_P - input_P))
-    guide_loss = guide_loss_S + guide_loss_P
+    guide_loss_P_balance = tf.cond(guide_loss_P < 0.01, lambda: 10*guide_loss_P,
+        lambda: guide_loss_P)
+    guide_loss = guide_loss_S + guide_loss_P_balance
 
     loss_GAN_F = tf.reduce_mean(tf.squared_difference(fake_DS, tf.ones_like(fake_DS)))
     loss_GAN_G = tf.reduce_mean(tf.squared_difference(fake_DP, tf.ones_like(fake_DP)))
@@ -74,14 +79,24 @@ def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
 
     optimizer = tf.train.AdamOptimizer(learning_rate)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    with tf.control_dependencies(update_ops):
-      G_optimizer = optimizer.minimize(loss_G, var_list=G_vars)
-      F_optimizer = optimizer.minimize(loss_F, var_list=F_vars)
-      DS_optimizer = optimizer.minimize(loss_DS, var_list=DS_vars)
-      DP_optimizer = optimizer.minimize(loss_DP, var_list=DP_vars)
+    #with tf.control_dependencies(update_ops):
+    #  G_optimizer = optimizer.minimize(loss_G, var_list=G_vars)
+    #  F_optimizer = optimizer.minimize(loss_F, var_list=F_vars)
+    #  DS_optimizer = optimizer.minimize(loss_DS, var_list=DS_vars)
+    #  DP_optimizer = optimizer.minimize(loss_DP, var_list=DP_vars)
+    #with tf.control_dependencies([G_optimizer, DP_optimizer, F_optimizer, DS_optimizer]):
+    #  train_op = tf.no_op(name='train_op')
 
-    with tf.control_dependencies([G_optimizer, DP_optimizer, F_optimizer, DS_optimizer]):
-      train_op = tf.no_op(name='train_op')
+    with tf.control_dependencies(update_ops):
+      G_gvs = optimizer.compute_gradients(loss_G, var_list=G_vars)
+      F_gvs = optimizer.compute_gradients(loss_F, var_list=F_vars)
+      DS_gvs = optimizer.compute_gradients(loss_DS, var_list=DS_vars)
+      DP_gvs = optimizer.compute_gradients(loss_DP, var_list=DP_vars)
+      gvs = G_gvs + F_gvs + DS_gvs + DP_gvs
+
+      capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gvs]
+      train_op = optimizer.apply_gradients(capped_gvs)
+
 
   else:
     train_op = None

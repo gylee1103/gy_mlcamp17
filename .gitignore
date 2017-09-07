@@ -10,3 +10,4 @@ log*
 checkpoints/
 graph_saver/
 *log*
+boxes/

@@ -64,19 +64,21 @@ def generator(x, scope_name, reuse, is_gray=True, separate_flow=False):
     else:
       return output
 
-
 def discriminator(x, scope_name, reuse):
   with tf.variable_scope(scope_name, reuse=reuse) as vscope:
     x = tf.layers.conv2d(x, 16, kernel_size=3, strides=2, padding='SAME',
         activation=tf.nn.relu) # H/2
     x = instance_normalization(x, 0)
-    x = tf.layers.conv2d(x, 32, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 32, kernel_size=3, strides=1, padding='SAME',
         activation=tf.nn.relu) # H/4
     x = instance_normalization(x, 1)
-    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=2, padding='SAME',
+    x = tf.layers.conv2d(x, 32, kernel_size=3, strides=1, padding='SAME',
         activation=tf.nn.relu) # H/8, W/8
     x = instance_normalization(x, 2)
+    x = tf.layers.conv2d(x, 64, kernel_size=3, strides=1, padding='SAME',
+        activation=tf.nn.relu) # H/8, W/8
+    x = instance_normalization(x, 3)
     output = tf.layers.conv2d(x, 1, kernel_size=1, strides=1, padding='SAME',
-        activation=tf.nn.sigmoid)
+        activation=tf.nn.sigmoid) # stride 2, rf 15
 
     return output

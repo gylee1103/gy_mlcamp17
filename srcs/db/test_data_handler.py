@@ -16,6 +16,7 @@ class TestDataHandler(DataHandler):
       self._image_paths = self._get_image_paths(
           os.path.join(root_path, paths_file))
       self._image_paths.sort()
+      self.basenames = [os.path.splitext(os.path.basename(f))[0] for f in self._image_paths]
 
       self._total_num = len(self._image_paths)
       
@@ -26,6 +27,9 @@ class TestDataHandler(DataHandler):
     def _get_image_paths(self, paths_file):
       with open(paths_file) as f:
           return [os.path.join(self.root_path, line.rstrip('\n')) for line in f]
+
+    def get_basenames(self):
+      return self.basenames
 
     def next(self):
         sz = self.target_size

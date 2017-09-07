@@ -95,6 +95,7 @@ def test():
     data_handler_T = TestDataHandler(
         get_data_dir(), FLAGS.T, max_size=max_size)
     num_test = data_handler_T.num_test()
+    basenames = data_handler_T.get_basenames()
 
     input_S = tf.placeholder_with_default(
         tf.zeros([1, max_size, max_size, 1]),
@@ -135,7 +136,7 @@ def test():
       pen_img = scipy.misc.imresize(pen_img, original_size, interp='nearest')
       pen_img = pen_img * 128.0 + 128.0
 
-      filepath = os.path.join(output_path, ('%d.png' % step))
+      filepath = os.path.join(output_path, ('%s.png' % basenames[step]))
 
       scipy.misc.imsave(filepath, pen_img) 
 
