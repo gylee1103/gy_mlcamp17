@@ -26,7 +26,7 @@ class BezierDataHandler(DataHandler):
         h, w, _ = canvas.shape
         x1, y1, x2, y2, x3, y3, x4, y4 = points
         #brush_r = np.random.randint(0, 3)
-        brush_r = 1
+        brush_r = 0
         for i in range(0, 1000):
             perc = i / 1000.0
             xa = self.getPt(x1, x2, perc)
@@ -58,10 +58,10 @@ class BezierDataHandler(DataHandler):
 
     def drawCircle(self, canvas):
       h, w, _ = canvas.shape
-      r = np.random.randint(10, 50, 1)
+      r = np.random.randint(5, 50, 1)
       a, b = np.random.randint(r, 256-r, 2)
       #brush_r = np.random.randint(0, 3)
-      brush_r = 1
+      brush_r = 0
       for i in range(0, 1000):
           t = math.pi * 2.0 * i / 1000.0
           x = int(a + r * math.cos(t))
@@ -87,7 +87,7 @@ class BezierDataHandler(DataHandler):
 
       self.drawLine(points, canvas)
       
-      n_line = np.random.randint(3, 6)
+      n_line = np.random.randint(3, 7)
       for i in range(n_line):
           points = np.random.randint(0, canvas_size, 8)
           points[0] = x4
@@ -96,7 +96,7 @@ class BezierDataHandler(DataHandler):
 
           self.drawLine(points, canvas)
 
-      n_circle = np.random.randint(0, 2)
+      n_circle = np.random.randint(5, 10)
       for i in range(n_circle):
         self.drawCircle(canvas)
 

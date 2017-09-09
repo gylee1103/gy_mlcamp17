@@ -25,6 +25,7 @@ def get_output_model_dir():
     name = "%s_%s_%02d_%02d_%02d_%02d" % (FLAGS.model_type, FLAGS.data_type,
             time_now.month, time_now.day, time_now.hour, time_now.minute)
     output_dir = "checkpoints/" + name
+    print("Output dir %s ! " % output_dir)
     return output_dir
   else:
     return FLAGS.output_model_dir
@@ -197,8 +198,13 @@ def train():
         tf.summary.image("S/S_cycled", predictions['S_cycled']),
         tf.summary.image("S/noisy_S", predictions['noisy_S']),
         tf.summary.image("P/input_P", input_P),
+        tf.summary.image("P/noisy_P", predictions['noisy_P']),
         tf.summary.image("P/S_from_P", predictions['S_from_P']),
         tf.summary.image("P/P_cycled", predictions['P_cycled']),
+
+        tf.summary.image("Debug/P_from_S", predictions['P_from_S']),
+        tf.summary.image("Debug/score_fakeP", predictions['fake_DP']),
+        tf.summary.image("Debug/score_realP", predictions['real_DP']),
 
         tf.summary.scalar("loss/loss_cycle_S", losses['loss_cycle_S']),
         tf.summary.scalar("loss/loss_cycle_P", losses['loss_cycle_P']),
@@ -230,9 +236,10 @@ def train():
       try:
         while True: # We manually shut down
           # First, generate fake image and update the fake pool. Then train.
+          tmp_S = data_handler_S.next()
+          tmp_P = data_handler_P.next()
           FP, FS = sess.run([predictions['P_from_S'], predictions['S_from_P']],
-              feed_dict={input_S: data_handler_S.next(),
-                input_P: data_handler_P.next(),})
+              feed_dict={input_S: tmp_S, input_P: tmp_P,})
 
           # Now train using data and the fake pools.
           fetch_dict = {
@@ -248,8 +255,8 @@ def train():
             })
 
           result = sess.run(fetch_dict,
-              feed_dict={input_S: data_handler_S.next(),
-                input_P: data_handler_P.next(),
+              feed_dict={input_S: tmp_S,
+                input_P: tmp_P,
                 input_FS_pool: fake_sketch_pool(FS),
                 input_FP_pool: fake_pen_pool(FP),})
 

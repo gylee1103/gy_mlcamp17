@@ -1,13 +1,17 @@
 import tensorflow as tf
+import numpy as np
 from models.model_block import generator, discriminator
-from models.augmentation import random_contrast
+from models.augmentation import random_contrast, preprocess_pen, get_mask
 
 def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
     is_training=True, cycle_lambda=10, learning_rate=0.0002):
   batch_size, target_size, _, target_channel = input_S.get_shape().as_list()
 
+  mask_P = get_mask(input_P)
+
   if is_training:
-      input_S = random_contrast(input_S)
+      #input_S = random_contrast(input_S)
+      input_P = preprocess_pen(input_P)
 
   # S is  Sketch, P is Pen
   P_from_S = generator(input_S, "generatorG", reuse=False)
@@ -22,7 +26,7 @@ def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
 
   predictions = {'P_from_S': P_from_S, 'S_from_P': S_from_P,
           'S_cycled': S_cycled, 'P_cycled': P_cycled, 
-          'noisy_S': input_S}
+          'noisy_S': input_S, 'noisy_P': input_P}
 
   if is_training:
 
@@ -31,29 +35,43 @@ def build_model(input_S, input_P, input_FS_pool=None, input_FP_pool=None,
 
     real_DP = discriminator(input_P, "discriminatorDP", reuse=False)
     fake_DP = discriminator(input_FP_pool, "discriminatorDP", reuse=True)
+    fake_DP_debug = discriminator(P_from_S, "discriminatorDP", reuse=True) # For debug
+
+    uint_real_DP = tf.cast(real_DP * 255, tf.uint8)
+    uint_fake_DP = tf.cast(fake_DP_debug * 255, tf.uint8)
 
     loss_real_DS = tf.reduce_mean(tf.squared_difference(real_DS, tf.ones_like(real_DS)))
     loss_fake_DS = tf.reduce_mean(tf.square(fake_DS))
     loss_DS = (loss_real_DS + loss_fake_DS) / 2
 
+    # Let's add fake/real_DP to predictions for debugging
+    predictions.update({
+      'real_DP': uint_real_DP, 'fake_DP': uint_fake_DP, 
+    })
+
     loss_real_DP = tf.reduce_mean(tf.squared_difference(real_DP, tf.ones_like(real_DP)))
     loss_fake_DP = tf.reduce_mean(tf.square(fake_DP))
+
     loss_DP = (loss_real_DP + loss_fake_DP) / 2
 
+    # Cycle loss
     loss_cycle_S = tf.reduce_mean(tf.abs(S_cycled - input_S))
     loss_cycle_P = tf.reduce_mean(tf.abs(P_cycled - input_P))
     loss_cycle = loss_cycle_S + loss_cycle_P
 
-    # guide loss(push to identity function)
+    loss_GAN_F = tf.reduce_mean(tf.squared_difference(fake_DS, tf.ones_like(fake_DS)))
+    loss_GAN_G = tf.reduce_mean(tf.squared_difference(fake_DP, tf.ones_like(fake_DP)))
+    
+    # Guide loss
     guide_loss_S = tf.reduce_mean(tf.abs(S_from_S - input_S))
     guide_loss_P = tf.reduce_mean(tf.abs(P_from_P - input_P))
-    guide_loss = guide_loss_P
+    guide_loss = guide_loss_S + guide_loss_P
 
     loss_GAN_F = tf.reduce_mean(tf.squared_difference(fake_DS, tf.ones_like(fake_DS)))
     loss_GAN_G = tf.reduce_mean(tf.squared_difference(fake_DP, tf.ones_like(fake_DP)))
 
-    loss_F = loss_GAN_F + cycle_lambda * loss_cycle + cycle_lambda * guide_loss
-    loss_G = loss_GAN_G + cycle_lambda * loss_cycle + cycle_lambda * guide_loss
+    loss_F = loss_GAN_F + cycle_lambda * (loss_cycle + guide_loss)
+    loss_G = loss_GAN_G + cycle_lambda * (loss_cycle + guide_loss)
 
     losses = {'loss_G': loss_GAN_G, 'loss_F': loss_GAN_F, 'loss_DS': loss_DS,
         'loss_DP': loss_DP, 'loss_cycle': loss_cycle, 'loss': loss_G,
